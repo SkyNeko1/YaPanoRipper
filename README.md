@@ -9,7 +9,7 @@
 [![License](https://img.shields.io/badge/License-MIT-0c1422?style=flat-square&logoColor=00b4ff)](LICENSE)
 [![Built with Claude](https://img.shields.io/badge/Built_with-Claude_AI-0c1422?style=flat-square&logo=anthropic&logoColor=00b4ff)](https://claude.ai)
 
-**[Русский](README.md) | [English](README_EN.md)**
+**Русский | [English](README_EN.md)**
 
 </div>
 
