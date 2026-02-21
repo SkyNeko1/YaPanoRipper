@@ -89,6 +89,6 @@ For educational purposes only. Use in accordance with [Yandex Maps Terms of Use]
 
 <div align="center">
 
-made with `#00b4ff` and [Claude](https://claude.ai)
+made with ♥ and [Claude](https://claude.ai)
 
 </div>
