@@ -89,6 +89,6 @@ python app.py
 
 <div align="center">
 
-made with `#00b4ff` and [Claude](https://claude.ai)
+made with ♥ and [Claude](https://claude.ai)
 
 </div>
