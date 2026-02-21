@@ -42,7 +42,7 @@
 ## ⚙ Installation
 
 ```bash
-git clone https://github.com/yourusername/YaPanoRipper
+git clone https://github.com/SkyNeko1/YaPanoRipper
 cd YaPanoRipper
 pip install -r requirements.txt
 python app.py
