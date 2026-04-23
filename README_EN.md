@@ -36,14 +36,12 @@ No installation. Everything works right in the tab.
 
 ## ✦ Features
 
-| | |
-|---|---|
-| 🛰 **Aerial panoramas** | Via OID or direct Yandex Maps link |
-| 🚗 **Street panoramas** | Via coordinates or link |
-| 🗺 **Interactive map** | Yandex Maps |
-| 📐 **Quality selector** | HI-RES / HIGH / MEDIUM / LOW |
-| 🖼 **Full preview** | Entire panorama shown before download |
-| 📋 **Paste from clipboard** | One-click paste for OID / URL |
+- 🛰 **Aerial panoramas** — via OID or direct Yandex Maps link
+- 🚗 **Street panoramas** — via coordinates or link
+- 🗺 **Interactive map** — Yandex Maps
+- 📐 **Quality selector** — HI-RES / HIGH / MEDIUM / LOW
+- 🖼 **Full preview** — entire panorama shown before download
+- 📋 **Paste from clipboard** — one-click paste for OID / URL
 
 ---
 
