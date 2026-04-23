@@ -82,20 +82,6 @@ For those who prefer to run everything locally.
 
 That's it. One file — one page.
 
-### If CORS fails under `file://`
-
-Some browsers have strict rules when opening HTML via the `file://` protocol. In that case, spin up a simple local server:
-
-```bash
-# Python
-python -m http.server 8000
-
-# Or Node.js
-npx serve .
-```
-
-And open http://localhost:8000 in your browser.
-
 </details>
 
 ---
