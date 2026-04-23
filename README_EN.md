@@ -4,8 +4,7 @@
 
 **Download Yandex Maps panoramas at full resolution**
 
-[![Python](https://img.shields.io/badge/Python-3.9+-0c1422?style=flat-square&logo=python&logoColor=00b4ff)](https://python.org)
-[![Flask](https://img.shields.io/badge/Flask-3.x-0c1422?style=flat-square&logo=flask&logoColor=00b4ff)](https://flask.palletsprojects.com)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-yap.skyne.ru-0c1422?style=flat-square&logo=googlechrome&logoColor=00b4ff)](https://yap.skyne.ru)
 [![License](https://img.shields.io/badge/License-MIT-0c1422?style=flat-square&logoColor=00b4ff)](LICENSE)
 [![Built with Claude](https://img.shields.io/badge/Built_with-Claude_AI-0c1422?style=flat-square&logo=anthropic&logoColor=00b4ff)](https://claude.ai)
 
@@ -17,11 +16,21 @@
 
 ## ⬡ What is this
 
-**YaPanoRipper** is a web application for downloading Yandex Maps panoramas at their original resolution. Supports both street-level and aerial panoramas. Assembles the full image from tiles and exports a single high-resolution JPEG.
+**YaPanoRipper** is a tool for downloading Yandex Maps panoramas at their original resolution. Supports both street-level and aerial panoramas. Assembles the full image from tiles and exports a single JPEG.
 
 ```
 19712 × 9856 px  ·  HI-RES
 ```
+
+---
+
+## ⭐ Recommended — online
+
+Just open it in your browser:
+
+### → **[yap.skyne.ru](https://yap.skyne.ru)** ←
+
+No installation. Everything works right in the tab.
 
 ---
 
@@ -31,24 +40,10 @@
 |---|---|
 | 🛰 **Aerial panoramas** | Via OID or direct Yandex Maps link |
 | 🚗 **Street panoramas** | Via coordinates or link |
-| 🗺 **Interactive map** | Yandex hybrid with panorama coverage layer |
+| 🗺 **Interactive map** | Yandex Maps |
 | 📐 **Quality selector** | HI-RES / HIGH / MEDIUM / LOW |
 | 🖼 **Full preview** | Entire panorama shown before download |
-| 🔄 **UA rotation** | Pool of thousands of User-Agent strings |
-| ⚡ **Async download** | Parallel tile fetching |
-
----
-
-## ⚙ Installation
-
-```bash
-git clone https://github.com/SkyNeko1/YaPanoRipper
-cd YaPanoRipper
-pip install -r requirements.txt
-python app.py
-```
-
-Open in browser: **http://localhost:5000**
+| 📋 **Paste from clipboard** | One-click paste for OID / URL |
 
 ---
 
@@ -56,7 +51,7 @@ Open in browser: **http://localhost:5000**
 
 **By coordinates** — click on the map or type latitude/longitude manually.
 
-**By aerial OID** — paste the OID from a Yandex Maps URL. It's 4 numbers separated by `_` in the `panorama[id]=` parameter.
+**By aerial OID** — paste the OID from a Yandex Maps URL.
 
 **By link** — paste any Yandex Maps URL with an open panorama. Type and parameters are detected automatically.
 
@@ -65,13 +60,43 @@ Open in browser: **http://localhost:5000**
 ## ◈ Quality
 
 | Quality | Example resolution |
-|---------|-------------------|
-| HI-RES  | 19712 × 9856 px   |
-| HIGH    | 7168 × 3584 px    |
-| MEDIUM  | 3584 × 1792 px    |
-| LOW     | 1792 × 896 px     |
+|---------|--------------------|
+| HI-RES  | 19712 × 9856 px    |
+| HIGH    | 7168 × 3584 px     |
+| MEDIUM  | 3584 × 1792 px     |
+| LOW     | 1792 × 896 px      |
 
 *Actual dimensions depend on the specific panorama*
+
+---
+
+<details>
+<summary><h2>🔽 If you need a local version</h2></summary>
+
+For those who prefer to run everything locally.
+
+### Installation
+
+1. Download **[index.html](https://raw.githubusercontent.com/SkyNeko1/YaPanoRipper/main/index.html)** (right-click → "Save as…")
+2. Open the saved file in your browser by double-clicking it
+
+That's it. One file — one page.
+
+### If CORS fails under `file://`
+
+Some browsers have strict rules when opening HTML via the `file://` protocol. In that case, spin up a simple local server:
+
+```bash
+# Python
+python -m http.server 8000
+
+# Or Node.js
+npx serve .
+```
+
+And open http://localhost:8000 in your browser.
+
+</details>
 
 ---
 
