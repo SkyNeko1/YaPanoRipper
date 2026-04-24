@@ -90,10 +90,6 @@ textarea { resize:none; height:54px; font-size:11px; }
 .map-coords { position:absolute; bottom:10px; left:10px; z-index:400; pointer-events:none; background:rgba(4,8,15,0.88); border:1px solid var(--border); padding:5px 11px; font-size:10px; color:var(--cyan); letter-spacing:0.1em; backdrop-filter:blur(4px); }
 .map-hint { position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:400; pointer-events:none; background:rgba(4,8,15,0.85); border:1px solid var(--border); padding:6px 14px; font-size:9px; color:var(--muted); letter-spacing:0.12em; backdrop-filter:blur(4px); white-space:nowrap; }
 .map-note { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); z-index:400; pointer-events:none; background:rgba(4,8,15,0.75); border:1px solid var(--border); padding:4px 12px; font-size:8px; color:var(--muted); letter-spacing:0.15em; backdrop-filter:blur(4px); white-space:nowrap; }
-.sidebar-footer { margin-top:auto; padding:14px 18px; border-top:1px solid var(--border); display:none; }
-.support-btn { background:transparent; border:1px solid var(--border); color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:0.18em; text-transform:uppercase; padding:9px 14px; cursor:pointer; width:100%; text-align:center; transition:all 0.2s; display:block; }
-.support-btn:hover { border-color:rgba(0,180,255,0.25); color:var(--blue); }
-
 /* leaflet */
 .leaflet-container { background:#040810; }
 .leaflet-control-attribution { display:none; }
@@ -166,7 +162,7 @@ textarea { resize:none; height:54px; font-size:11px; }
 
 /* ── базовые анимации ── */
 .btn, .mbtn, .mbtn-ghost, .btn-save, .btn-paste,
-.qcard, .modal-x, .support-btn, .ltog {
+.qcard, .modal-x, .ltog {
   transition: color 0.18s ease, background-color 0.18s ease,
               border-color 0.18s ease, transform 0.12s ease;
 }
@@ -368,10 +364,6 @@ textarea { resize:none; height:54px; font-size:11px; }
     <div class="done-title">Готово</div>
     <div class="done-meta" id="done-meta"></div>
     <a id="btn-save" class="btn-save">↓ Сохранить</a>
-  </div>
-
-  <div class="sidebar-footer">
-    <div class="support-btn" title="скоро">♥ поддержать создателя</div>
   </div>
 
 </aside>
