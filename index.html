@@ -329,8 +329,8 @@ textarea { resize:none; height:54px; font-size:11px; }
     <div class="sec-title">01 · Координаты</div>
     <div class="hint-box">Для <strong>уличных панорам</strong>. Кликни на карту или введи вручную.</div>
     <div class="row2">
-      <div class="field"><label>Широта</label><input type="text" id="lat" maxlength="20" inputmode="decimal" placeholder="55.7558"></div>
-      <div class="field"><label>Долгота</label><input type="text" id="lon" maxlength="20" inputmode="decimal" placeholder="37.6173"></div>
+      <div class="field"><label>Широта</label><input type="text" id="lat" maxlength="20" inputmode="decimal" placeholder="55.7558" autocomplete="off"></div>
+      <div class="field"><label>Долгота</label><input type="text" id="lon" maxlength="20" inputmode="decimal" placeholder="37.6173" autocomplete="off"></div>
     </div>
     <button class="btn" id="btn-coords" onclick="onFindCoords()"><span id="btn-coords-txt">⟶ НАЙТИ ПАНОРАМУ</span></button>
     <div class="err" id="coords-err"></div>
@@ -339,7 +339,7 @@ textarea { resize:none; height:54px; font-size:11px; }
   <div class="sec">
     <div class="sec-title">02 · OID аэропанорамы</div>
     <div class="hint-box">Для <strong>аэрофотопанорам</strong> — OID из URL Яндекса (4 числа через _).</div>
-    <div class="field"><input type="text" id="oid-input" maxlength="60" placeholder="XXXX_XXXXXXXXX_XX_XXXXXXXXXX"></div>
+    <div class="field"><input type="text" id="oid-input" maxlength="60" placeholder="XXXX_XXXXXXXXX_XX_XXXXXXXXXX" autocomplete="off"></div>
     <button class="btn" id="btn-oid" onclick="onFindOid()"><span id="btn-oid-txt">⟶ НАЙТИ ПО OID</span></button>
     <div class="err" id="oid-err"></div>
   </div>
@@ -348,7 +348,7 @@ textarea { resize:none; height:54px; font-size:11px; }
     <div class="sec-title">03 · Ссылка</div>
     <div class="hint-box">Любая ссылка Яндекс.Карты — <strong>уличная или аэро</strong>.</div>
     <div class="field url-wrap">
-      <textarea id="yandex-url" maxlength="2000" placeholder="https://yandex.com/maps/..."></textarea>
+      <textarea id="yandex-url" maxlength="2000" placeholder="https://yandex.com/maps/..." autocomplete="off"></textarea>
       <button type="button" class="btn-paste" onclick="pasteFromClipboard()" title="Вставить из буфера обмена">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
         <span>вставить</span>
@@ -586,7 +586,10 @@ async function yandexFind(params) {
   return null;
 }
 
+const SHORT_URL_RE = /^https?:\/\/yandex\.[a-z]+\/maps\/-\/[A-Za-z0-9_-]+\/?(\?.*)?$/i;
+
 function parseYandexUrl(url) {
+  if (SHORT_URL_RE.test(url)) return { error: 'Короткие ссылки временно не поддерживаются' };
   try {
     const u  = new URL(url);
     const qs = new URLSearchParams(u.search);
@@ -610,6 +613,14 @@ function haversine(lat1, lon1, lat2, lon2) {
 }
 
 // ── Map ───────────────────────────────────────────────────────────────────────
+// Очистка полей при перезагрузке (браузер восстанавливает значения даже при autocomplete=off)
+window.addEventListener('pageshow', () => {
+  ['yandex-url', 'oid-input', 'lat', 'lon'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+});
+
 function initMap() {
   // Яндекс-тайлы используют EPSG:3395 (elliptical mercator) — тот же, что и их API
   // панорам. Это убирает смещение клик→панорама.
