@@ -36,7 +36,7 @@ No installation. Everything works right in the tab.
 
 ## ✦ Features
 
-- 🛰 **Aerial panoramas** — via OID or direct Yandex Maps link
+- 🛰 **Aerial panoramas** — via OID or direct Yandex Maps link *(exclusive)*
 - 🚗 **Street panoramas** — via coordinates or link
 - 🗺 **Interactive map** — Yandex Maps
 - 📐 **Quality selector** — HI-RES / HIGH / MEDIUM / LOW
@@ -92,7 +92,11 @@ This project was built in collaboration with **[Claude](https://claude.ai)** —
 
 ## ⚠ Disclaimer
 
-For educational purposes only. Use in accordance with [Yandex Maps Terms of Use](https://yandex.ru/legal/maps_termsofuse/).
+This tool is created for **educational and research purposes**.
+
+- All data (panoramas, imagery, geodata) belongs to **Yandex LLC** and is used in accordance with the [Yandex Maps Terms of Use](https://yandex.ru/legal/maps_termsofuse/)
+- The user is solely responsible for complying with applicable laws and Yandex Maps terms when using this tool
+- The author bears no responsibility for how third parties use this tool
 
 ---
 
