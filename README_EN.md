@@ -100,6 +100,12 @@ This tool is created for **educational and research purposes**.
 
 ---
 
+## ✿ Acknowledgments
+
+- **[zer0-dev/yandex-pano-downloader](https://github.com/zer0-dev/yandex-pano-downloader)** — for the original idea. The repository helped with the API.
+
+---
+
 ## License
 
 Distributed under the [Elastic License 2.0](LICENSE). Hosting as a managed service is prohibited without author's consent.
