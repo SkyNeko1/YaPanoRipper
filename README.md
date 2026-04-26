@@ -100,6 +100,12 @@
 
 ---
 
+## ✿ Благодарности
+
+- **[zer0-dev/yandex-pano-downloader](https://github.com/zer0-dev/yandex-pano-downloader)** — за исходную идею. Репозиторий помог с API.
+
+---
+
 ## License
 
 Распространяется под [Elastic License 2.0](LICENSE). Запрещено хостить как managed-сервис без согласия автора.
