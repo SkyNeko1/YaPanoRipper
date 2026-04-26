@@ -5,7 +5,7 @@
 **Download Yandex Maps panoramas at full resolution**
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-yap.skyne.ru-0c1422?style=flat-square&logo=googlechrome&logoColor=00b4ff)](https://yap.skyne.ru)
-[![License](https://img.shields.io/badge/License-MIT-0c1422?style=flat-square&logoColor=00b4ff)](LICENSE)
+[![License](https://img.shields.io/badge/License-Elastic--2.0-0c1422?style=flat-square&logoColor=00b4ff)](LICENSE)
 [![Built with Claude](https://img.shields.io/badge/Built_with-Claude_AI-0c1422?style=flat-square&logo=anthropic&logoColor=00b4ff)](https://claude.ai)
 
 **[Русский](README.md) | English**
@@ -97,6 +97,12 @@ This tool is created for **educational and research purposes**.
 - All data (panoramas, imagery, geodata) belongs to **Yandex LLC** and is used in accordance with the [Yandex Maps Terms of Use](https://yandex.ru/legal/maps_termsofuse/)
 - The user is solely responsible for complying with applicable laws and Yandex Maps terms when using this tool
 - The author bears no responsibility for how third parties use this tool
+
+---
+
+## License
+
+Distributed under the [Elastic License 2.0](LICENSE). Hosting as a managed service is prohibited without author's consent.
 
 ---
 
