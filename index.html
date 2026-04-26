@@ -578,12 +578,14 @@ async function yandexFind(params) {
       if (!r.ok) { _lastFindError = `HTTP ${r.status} от API Яндекса`; continue; }
       const d = await r.json();
       if (d.status !== 'success') {
-        _lastFindError = `API: ${d.status}` + (d.error ? ' — ' + String(d.error).slice(0,200) : '');
+        // Yandex returns status='error' for points without panoramas.
+        console.warn('[yandexFind] API non-success:', d.status, d.error);
+        _lastFindError = 'Здесь нет панорамы';
         continue;
       }
       const result = parseApiResponse(d, p);
       if (result) return result;
-      _lastFindError = 'API вернул ответ без zooms / image_id';
+      _lastFindError = 'Здесь нет панорамы';
     } catch(e) {
       _lastFindError = (e.name === 'TypeError')
         ? 'Сеть или CORS блокирует api-maps.yandex.ru (проверь VPN / расширения)'
