@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<!--
+  YaPanoRipper Desktop
+  Copyright (c) 2026 SkyNeko1
+  Licensed under the Elastic License 2.0.
+  Source: https://github.com/SkyNeko1/YaPanoRipper
+-->
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+<title>PANORAMA RIPPER · DESKTOP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Bebas+Neue&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+:root {
+  --bg:     #04080f;
+  --s1:     #080e1a;
+  --s2:     #0c1422;
+  --border: rgba(0,180,255,0.15);
+  --blue:   #00b4ff;
+  --cyan:   #00e5ff;
+  --green:  #00ff88;
+  --red:    #ff3355;
+  --amber:  #ffb84d;
+  --muted:  #2a3a50;
+  --text:   #c8ddf0;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'JetBrains Mono',monospace; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; }
+::selection { background:rgba(0,180,255,0.3); color:var(--text); }
+
+.layout { display:grid; grid-template-columns:340px 1fr; grid-template-rows:48px 1fr; height:100vh; }
+
+/* header */
+.hdr { grid-column:1/-1; display:flex; align-items:center; padding:0 20px; gap:14px; border-bottom:1px solid var(--border); background:var(--s1); }
+.hdr-logo { font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:0.12em; background:linear-gradient(90deg,var(--blue),var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.hdr-sub { font-size:8px; letter-spacing:0.25em; color:var(--muted); text-transform:uppercase; }
+.hdr-spacer { flex:1; }
+
+/* protection pill (UA status) */
+.prot-pill {
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:9px; letter-spacing:0.2em; text-transform:uppercase;
+  color:var(--muted);
+  border:1px solid var(--border); background:var(--s2);
+  padding:5px 11px;
+  cursor:default;
+  transition:color 0.18s, border-color 0.18s, background-color 0.18s;
+}
+.prot-pill:hover { background:rgba(0,180,255,0.04); color:var(--text); }
+.prot-pill .dot { width:6px; height:6px; border-radius:50%; background:var(--muted); }
+.prot-pill.ok    { color:var(--green); border-color:rgba(0,255,136,0.3); }
+.prot-pill.ok    .dot { background:var(--green); box-shadow:0 0 8px var(--green); }
+.prot-pill.warn  { color:var(--amber); border-color:rgba(255,184,77,0.35); }
+.prot-pill.warn  .dot { background:var(--amber); }
+.prot-pill.err   { color:var(--red); border-color:rgba(255,51,85,0.35); }
+.prot-pill.err   .dot { background:var(--red); animation:tpulse 1.4s infinite; }
+
+.hdr-gh { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; color:var(--muted); border:1px solid var(--border); background:var(--s2); text-decoration:none; transition:color 0.18s, border-color 0.18s, background-color 0.18s, transform 0.12s; }
+.hdr-gh:hover { color:var(--blue); border-color:rgba(0,180,255,0.35); background:rgba(0,180,255,0.06); }
+.hdr-gh:active { transform:scale(0.94); }
+.hdr-gh svg { width:16px; height:16px; fill:currentColor; display:block; }
+
+/* sidebar */
+.sidebar { border-right:1px solid var(--border); background:var(--s1); display:flex; flex-direction:column; overflow-y:auto; }
+.sec { border-bottom:1px solid var(--border); padding:16px 18px; }
+.sec-title { font-family:'Syne',sans-serif; font-size:9px; font-weight:800; letter-spacing:0.3em; text-transform:uppercase; color:var(--blue); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.sec-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* identity (UA) section */
+.id-grid { display:grid; grid-template-columns:60px 1fr; row-gap:8px; column-gap:12px; font-size:10px; }
+.id-key { font-family:'Syne',sans-serif; font-weight:800; font-size:8px; letter-spacing:0.22em; color:var(--muted); text-transform:uppercase; padding-top:2px; }
+.id-val { color:var(--text); word-break:break-all; line-height:1.55; }
+.id-val .pending { color:var(--muted); font-style:italic; }
+.id-val .badge { display:inline-block; font-family:'Syne',sans-serif; font-weight:800; font-size:7px; letter-spacing:0.2em; text-transform:uppercase; padding:1px 6px; margin-left:6px; border:1px solid currentColor; vertical-align:middle; line-height:1.4; }
+.id-val .badge.external { color:var(--blue); }
+.id-val .badge.bundled  { color:var(--amber); }
+
+.hint-box { background:rgba(0,180,255,0.05); border:1px solid rgba(0,180,255,0.12); padding:9px 12px; font-size:9px; color:var(--muted); line-height:1.8; margin-bottom:10px; }
+.hint-box strong { color:var(--blue); }
+.hint { font-size:9px; color:var(--muted); line-height:1.8; margin-bottom:8px; }
+
+.field { margin-bottom:10px; }
+label { display:block; font-size:9px; letter-spacing:0.18em; color:var(--muted); text-transform:uppercase; margin-bottom:4px; }
+input[type=text], textarea { width:100%; background:var(--s2); border:1px solid var(--border); color:var(--text); font-family:'JetBrains Mono',monospace; font-size:12px; padding:8px 10px; outline:none; transition:border-color 0.2s; }
+input:focus, textarea:focus { border-color:rgba(0,180,255,0.5); }
+textarea { resize:none; height:54px; font-size:11px; }
+.row2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+
+.btn { width:100%; background:transparent; border:1px solid var(--blue); color:var(--blue); font-family:'Syne',sans-serif; font-size:10px; font-weight:800; letter-spacing:0.22em; text-transform:uppercase; padding:11px; cursor:pointer; transition:all 0.2s; position:relative; overflow:hidden; }
+.btn::before { content:''; position:absolute; inset:0; background:var(--blue); transform:scaleX(0); transform-origin:left; transition:transform 0.25s; z-index:0; }
+.btn:hover::before { transform:scaleX(1); }
+.btn:hover { color:var(--bg); }
+.btn span { position:relative; z-index:1; }
+.btn:disabled { opacity:0.3; cursor:not-allowed; }
+.btn:disabled::before { display:none; }
+.btn:disabled:hover { color:var(--blue); }
+
+.err { background:rgba(255,51,85,0.07); border:1px solid rgba(255,51,85,0.25); color:var(--red); padding:8px 11px; font-size:10px; line-height:1.6; margin-top:8px; display:none; word-break:break-all; }
+
+/* progress */
+.prog-wrap { padding:16px 18px; border-bottom:1px solid var(--border); display:none; }
+.prog-pct { font-family:'Bebas Neue',sans-serif; font-size:38px; color:var(--blue); line-height:1; }
+.prog-sub { font-size:9px; color:var(--muted); margin-bottom:7px; }
+.track { height:2px; background:var(--border); margin-bottom:8px; }
+.track-fill { height:100%; background:linear-gradient(90deg,var(--blue),var(--cyan)); width:0%; transition:width 0.3s ease; }
+.plog { font-size:9px; color:var(--muted); max-height:60px; overflow-y:auto; line-height:1.9; }
+.plog .ok  { color:var(--green); }
+.plog .err { color:var(--red); }
+.plog .inf { color:var(--cyan); }
+
+/* done */
+.done-wrap { padding:18px; border-bottom:1px solid var(--border); display:none; text-align:center; }
+.done-glyph { font-family:'Bebas Neue',sans-serif; font-size:44px; color:var(--blue); display:block; }
+.done-title { font-family:'Syne',sans-serif; font-size:12px; font-weight:800; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:3px; }
+.done-meta  { font-size:9px; color:var(--muted); margin-bottom:14px; }
+.btn-save { display:inline-block; background:linear-gradient(90deg,var(--blue),var(--cyan)); color:var(--bg); font-family:'Syne',sans-serif; font-weight:800; font-size:9px; letter-spacing:0.2em; text-transform:uppercase; padding:9px 22px; text-decoration:none; transition:all 0.2s; }
+.btn-save:hover { box-shadow:0 0 20px rgba(0,180,255,0.4); transform:translateY(-1px); }
+
+/* map */
+.map-wrap { position:relative; overflow:hidden; }
+#map { width:100%; height:100%; background:#040810; }
+.map-coords { position:absolute; bottom:10px; left:10px; z-index:400; pointer-events:none; background:rgba(4,8,15,0.88); border:1px solid var(--border); padding:5px 11px; font-size:10px; color:var(--cyan); letter-spacing:0.1em; backdrop-filter:blur(4px); }
+.map-hint { position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:400; pointer-events:none; background:rgba(4,8,15,0.85); border:1px solid var(--border); padding:6px 14px; font-size:9px; color:var(--muted); letter-spacing:0.12em; backdrop-filter:blur(4px); white-space:nowrap; }
+.map-note { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); z-index:400; pointer-events:none; background:rgba(4,8,15,0.75); border:1px solid var(--border); padding:4px 12px; font-size:8px; color:var(--muted); letter-spacing:0.15em; backdrop-filter:blur(4px); white-space:nowrap; }
+/* leaflet */
+.leaflet-container { background:#040810; }
+.leaflet-control-attribution { display:none; }
+.leaflet-control-zoom a { background:var(--s2)!important; border-color:var(--border)!important; color:var(--text)!important; }
+.leaflet-popup-content-wrapper { background:var(--s1); border:1px solid var(--border); border-radius:0; color:var(--text); box-shadow:0 0 24px rgba(0,0,0,0.7); }
+.leaflet-popup-tip { background:var(--s1); }
+.leaflet-popup-content { margin:11px 13px; font-family:'JetBrains Mono',monospace; font-size:10px; line-height:1.9; }
+
+/* modal */
+.backdrop { position:fixed; inset:0; background:rgba(4,8,15,0.85); backdrop-filter:blur(6px); z-index:600; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.2s; }
+.backdrop.open { opacity:1; pointer-events:all; }
+.modal { background:var(--s1); border:1px solid rgba(0,180,255,0.25); width:540px; max-width:96vw; position:relative; transform:translateY(14px) scale(0.97); transition:transform 0.22s; max-height:90vh; overflow-y:auto; }
+.backdrop.open .modal { transform:none; }
+.modal::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--blue),transparent); }
+.modal-hdr { padding:20px 22px 16px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--s1); z-index:1; }
+.modal-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.1em; color:var(--blue); }
+.modal-x { background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer; }
+.modal-x:hover { color:var(--text); }
+.modal-body { padding:18px 22px 0; }
+.modal-foot { padding:14px 22px 20px; display:flex; gap:8px; }
+.modal-err { margin:8px 22px 0; background:rgba(255,51,85,0.07); border:1px solid rgba(255,51,85,0.25); color:var(--red); padding:8px 12px; font-size:10px; display:none; }
+
+.mbtn { flex:1; background:transparent; border:1px solid var(--blue); color:var(--blue); font-family:'Syne',sans-serif; font-size:10px; font-weight:800; letter-spacing:0.2em; text-transform:uppercase; padding:11px; cursor:pointer; transition:all 0.2s; position:relative; overflow:hidden; }
+.mbtn::before { content:''; position:absolute; inset:0; background:var(--blue); transform:scaleX(0); transform-origin:left; transition:transform 0.25s; z-index:0; }
+.mbtn:hover::before { transform:scaleX(1); }
+.mbtn:hover { color:var(--bg); }
+.mbtn span { position:relative; z-index:1; }
+.mbtn:disabled { opacity:0.3; cursor:not-allowed; }
+.mbtn:disabled::before { display:none; }
+.mbtn:disabled:hover { color:var(--blue); }
+.mbtn-ghost { border-color:var(--border); color:var(--muted); flex:0 0 90px; }
+.mbtn-ghost::before { background:var(--s2); }
+.mbtn-ghost:hover { color:var(--text); }
+
+/* pano info */
+.pano-bar { display:flex; align-items:center; gap:9px; padding:8px 12px; background:var(--s2); border:1px solid var(--border); margin-bottom:14px; }
+.pano-badge { font-family:'Bebas Neue',sans-serif; font-size:11px; letter-spacing:0.1em; padding:2px 8px; border:1px solid var(--blue); color:var(--blue); }
+.pano-addr { font-size:9px; color:var(--muted); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* preview */
+.preview-wrap { width:100%; margin-bottom:14px; background:var(--s2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.preview-wrap img { width:100%; height:auto; display:block; }
+.preview-skel { width:100%; height:160px; background:linear-gradient(90deg,var(--s2) 25%,rgba(0,180,255,0.06) 50%,var(--s2) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; }
+
+/* quality */
+.qgrid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+.qcard { background:var(--s2); border:2px solid var(--border); padding:10px 5px; cursor:pointer; transition:all 0.18s; text-align:center; position:relative; }
+.qcard:hover { border-color:rgba(0,180,255,0.4); }
+.qcard.sel { border-color:var(--blue); background:rgba(0,180,255,0.07); }
+.qcard.sel::after { content:'✓'; position:absolute; top:4px; right:5px; font-size:9px; color:var(--blue); }
+.qcard-lvl  { font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:0.08em; color:var(--text); }
+.qcard-desc { font-size:8px; color:var(--muted); margin-top:2px; line-height:1.5; }
+.qcard-px   { font-size:8px; color:var(--blue); margin-top:3px; }
+
+.fname-row { display:flex; gap:8px; align-items:center; }
+.fname-row label { margin:0; white-space:nowrap; }
+.fname-row input { flex:1; margin:0; }
+
+.url-wrap { position:relative; }
+.url-wrap textarea { padding-right:96px; }
+.btn-paste { position:absolute; top:4px; right:4px; background:var(--s2); border:1px solid var(--border); color:var(--muted); cursor:pointer; padding:5px 9px; font-size:9px; letter-spacing:0.12em; text-transform:uppercase; line-height:1; transition:all 0.15s; display:inline-flex; align-items:center; gap:5px; z-index:1; font-family:'JetBrains Mono',monospace; }
+.btn-paste:hover { color:var(--blue); border-color:var(--blue); }
+.btn-paste:active { background:rgba(0,180,255,0.08); }
+.btn-paste svg { width:11px; height:11px; flex-shrink:0; }
+
+.spin { display:inline-block; width:10px; height:10px; border:2px solid rgba(0,180,255,0.2); border-top-color:var(--blue); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:4px; }
+
+@keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+@keyframes spin    { to{transform:rotate(360deg)} }
+@keyframes tpulse  { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* base anims */
+.btn, .mbtn, .mbtn-ghost, .btn-save, .btn-paste,
+.qcard, .modal-x {
+  transition: color 0.18s ease, background-color 0.18s ease,
+              border-color 0.18s ease, transform 0.12s ease;
+}
+.btn:active:not(:disabled),
+.mbtn:active:not(:disabled),
+.mbtn-ghost:active,
+.btn-save:active,
+.btn-paste:active { transform: scale(0.97); }
+.qcard:hover:not(.sel) { transform: translateY(-1px); }
+
+.backdrop { transition: opacity 0.2s ease; }
+.modal    { transition: transform 0.22s ease-out, opacity 0.2s ease; }
+.backdrop:not(.open) .modal { opacity: 0; transform: translateY(10px) scale(0.97); }
+.backdrop.open .modal       { opacity: 1; transform: none; }
+
+/* map smoothness */
+.leaflet-tile {
+  transition: opacity 1.4s cubic-bezier(0.22, 1, 0.36, 1) !important;
+  will-change: opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  image-rendering: -webkit-optimize-contrast;
+}
+.leaflet-pane,
+.leaflet-tile-container,
+.leaflet-layer,
+.leaflet-zoom-animated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+.map-wrap { contain: paint; will-change: transform; }
+.leaflet-zoom-anim .leaflet-zoom-animated {
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+/* ── floating centered toast ─────────────────────────────────────────────── */
+.toast-host {
+  position:fixed;
+  top:62px; left:50%;
+  transform:translateX(-50%) translateY(-12px);
+  z-index:1500;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 0.25s ease, transform 0.32s cubic-bezier(0.22,1,0.36,1);
+}
+.toast-host.show { opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; }
+.toast {
+  display:flex; align-items:center; gap:12px;
+  padding:11px 22px;
+  border-radius:999px;
+  background:rgba(8,14,26,0.92);
+  border:1px solid var(--border);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  font-size:11px; letter-spacing:0.06em;
+  white-space:nowrap;
+  max-width:calc(100vw - 80px);
+}
+.toast .dot {
+  width:8px; height:8px; border-radius:50%;
+  background:var(--blue); flex-shrink:0;
+  box-shadow:0 0 10px var(--blue);
+  animation:tpulse 1.4s infinite;
+}
+.toast .title {
+  font-family:'Syne',sans-serif; font-weight:800;
+  text-transform:uppercase; letter-spacing:0.15em;
+  font-size:10px;
+  color:var(--blue);
+}
+.toast .desc { color:var(--text); opacity:0.78; font-size:10px; }
+.toast .desc:empty { display:none; }
+.toast-host.warn .toast        { border-color:rgba(255,184,77,0.4); }
+.toast-host.warn .toast .dot   { background:var(--amber); box-shadow:0 0 10px var(--amber); }
+.toast-host.warn .toast .title { color:var(--amber); }
+.toast-host.err  .toast        { border-color:rgba(255,51,85,0.45); }
+.toast-host.err  .toast .dot   { background:var(--red); box-shadow:0 0 10px var(--red); }
+.toast-host.err  .toast .title { color:var(--red); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<header class="hdr">
+  <div>
+    <div class="hdr-logo">⬡ PANORAMA RIPPER</div>
+  </div>
+  <div class="hdr-sub">Yandex Maps · Desktop</div>
+  <div class="hdr-spacer"></div>
+  <div id="protPill" class="prot-pill" title="Защита: ротация User-Agent">
+    <span class="dot"></span><span id="protPillTxt">Booting</span>
+  </div>
+  <a class="hdr-gh" href="https://github.com/SkyNeko1/YaPanoRipper" target="_blank" rel="noopener noreferrer" title="GitHub" aria-label="GitHub">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.73.5.66 5.57.66 11.84c0 5.02 3.25 9.27 7.77 10.77.57.1.78-.25.78-.55 0-.27-.01-1.16-.02-2.1-3.16.69-3.83-1.34-3.83-1.34-.52-1.31-1.27-1.66-1.27-1.66-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.24 3.33.95.1-.74.4-1.24.73-1.52-2.52-.29-5.17-1.26-5.17-5.62 0-1.24.44-2.25 1.17-3.04-.12-.29-.51-1.45.11-3.03 0 0 .96-.31 3.15 1.16.91-.25 1.89-.38 2.86-.38.97 0 1.95.13 2.86.38 2.19-1.47 3.15-1.16 3.15-1.16.62 1.58.23 2.74.11 3.03.73.79 1.17 1.8 1.17 3.04 0 4.37-2.66 5.33-5.19 5.61.41.35.77 1.05.77 2.12 0 1.53-.01 2.77-.01 3.15 0 .3.21.66.79.55 4.51-1.5 7.76-5.75 7.76-10.77C23.34 5.57 18.27.5 12 .5Z"/></svg>
+  </a>
+</header>
+
+<aside class="sidebar">
+
+  <div class="sec">
+    <div class="sec-title">01 · Координаты</div>
+    <div class="hint-box">Для <strong>уличных панорам</strong>. Кликни на карту или введи вручную.</div>
+    <div class="row2">
+      <div class="field"><label>Широта</label><input type="text" id="lat" maxlength="20" inputmode="decimal" placeholder="55.7558" autocomplete="off"></div>
+      <div class="field"><label>Долгота</label><input type="text" id="lon" maxlength="20" inputmode="decimal" placeholder="37.6173" autocomplete="off"></div>
+    </div>
+    <button class="btn" id="btn-coords" onclick="onFindCoords()"><span id="btn-coords-txt">⟶ НАЙТИ ПАНОРАМУ</span></button>
+    <div class="err" id="coords-err"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">02 · OID аэропанорамы</div>
+    <div class="hint-box">Для <strong>аэрофотопанорам</strong> — OID из URL Яндекса (4 числа через _).</div>
+    <div class="field"><input type="text" id="oid-input" maxlength="60" placeholder="XXXX_XXXXXXXXX_XX_XXXXXXXXXX" autocomplete="off"></div>
+    <button class="btn" id="btn-oid" onclick="onFindOid()"><span id="btn-oid-txt">⟶ НАЙТИ ПО OID</span></button>
+    <div class="err" id="oid-err"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">03 · Ссылка</div>
+    <div class="hint-box">Любая ссылка Яндекс.Карты — <strong>уличная или аэро</strong>.</div>
+    <div class="field url-wrap">
+      <textarea id="yandex-url" maxlength="2000" placeholder="https://yandex.com/maps/..." autocomplete="off"></textarea>
+      <button type="button" class="btn-paste" onclick="pasteFromClipboard()" title="Вставить из буфера обмена">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+        <span>вставить</span>
+      </button>
+    </div>
+    <button class="btn" id="btn-url" onclick="onParseUrl()"><span id="btn-url-txt">⟶ РАЗОБРАТЬ ССЫЛКУ</span></button>
+    <div class="err" id="url-err"></div>
+  </div>
+
+  <div class="prog-wrap" id="prog-wrap">
+    <div style="font-size:9px;letter-spacing:.25em;color:var(--blue);text-transform:uppercase;margin-bottom:8px">⟳ ЗАГРУЗКА</div>
+    <div class="prog-pct" id="prog-pct">0%</div>
+    <div class="prog-sub" id="prog-sub">инициализация...</div>
+    <div class="track"><div class="track-fill" id="track-fill"></div></div>
+    <div class="plog" id="plog"></div>
+  </div>
+
+  <div class="done-wrap" id="done-wrap">
+    <span class="done-glyph">✦</span>
+    <div class="done-title">Готово</div>
+    <div class="done-meta" id="done-meta"></div>
+    <a id="btn-save" class="btn-save">↓ Сохранить</a>
+  </div>
+
+</aside>
+
+<div class="map-wrap">
+  <div id="map"></div>
+  <div class="map-coords" id="map-coords">— наведи курсор —</div>
+  <div class="map-hint" id="map-hint">🛰 кликни на карту чтобы найти панораму</div>
+  <div class="map-note">карта используется только для выбора координат панорамы</div>
+</div>
+
+</div>
+
+<!-- Floating centered toast (system events) -->
+<div id="toastHost" class="toast-host">
+  <div class="toast">
+    <span class="dot"></span>
+    <span class="title" id="toastTitle">—</span>
+    <span class="desc" id="toastDesc"></span>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="backdrop" id="m-zoom">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">ВЫБЕРИ КАЧЕСТВО</div>
+      <button class="modal-x" onclick="closeModal('m-zoom')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="pano-bar">
+        <div class="pano-badge">⬡ ПАНОРАМА</div>
+        <div class="pano-addr" id="zoom-addr"></div>
+      </div>
+      <div class="preview-wrap" id="preview-wrap"><div class="preview-skel"></div></div>
+      <div class="qgrid" id="qgrid"></div>
+      <div class="fname-row">
+        <label>Файл</label>
+        <input type="text" id="filename" value="panorama.jpg">
+      </div>
+    </div>
+    <div class="modal-err" id="m-zoom-err"></div>
+    <div class="modal-foot">
+      <button class="mbtn mbtn-ghost" onclick="closeModal('m-zoom')"><span>ОТМЕНА</span></button>
+      <button class="mbtn" id="btn-dl" onclick="startDownload()" disabled>
+        <span id="btn-dl-txt">↓ ВЫБЕРИ КАЧЕСТВО</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const QUALITY = [
+  { label:'HI-RES', desc:'Максимальное' },
+  { label:'HIGH',   desc:'Высокое' },
+  { label:'MEDIUM', desc:'Среднее' },
+  { label:'LOW',    desc:'Быстрая загрузка' },
+];
+
+const BATCH = 12;
+const MAX_TILE_ATTEMPTS = 3;
+const HAS_OFFSCREEN = (typeof OffscreenCanvas !== 'undefined');
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function tileUrl(id, zoom, x, y) {
+  return `https://pano.maps.yandex.net/${id}/${zoom}.${x|0}.${y|0}`;
+}
+
+function loadImage(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.referrerPolicy = 'no-referrer';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('tile load failed'));
+    img.src = url;
+  });
+}
+
+async function loadTileRetry(url) {
+  let lastErr = null;
+  for (let a = 0; a < MAX_TILE_ATTEMPTS; a++) {
+    try { return await loadImage(url); }
+    catch(e) {
+      lastErr = e;
+      if (a < MAX_TILE_ATTEMPTS - 1)
+        await sleep(250 * Math.pow(3, a) + Math.random()*200);
+    }
+  }
+  throw lastErr;
+}
+
+async function runPool(items, initialLimit, worker) {
+  let idx = 0, running = 0, doneCount = 0;
+  let limit = Math.max(1, initialLimit);
+  let recentFails = 0, recentOks = 0;
+  return new Promise((resolve) => {
+    if (items.length === 0) return resolve();
+    function pump() {
+      while (running < limit && idx < items.length) {
+        const i = idx++;
+        running++;
+        Promise.resolve(worker(items[i], i)).then(
+          () => {
+            running--; doneCount++;
+            recentOks++;
+            if (recentOks > 10 && limit < initialLimit) { limit++; recentOks = 0; }
+            recentFails = Math.max(0, recentFails - 1);
+            if (doneCount === items.length) resolve(); else pump();
+          },
+          () => {
+            running--; doneCount++;
+            recentFails++; recentOks = 0;
+            if (recentFails >= 3 && limit > 2) { limit = Math.max(2, Math.floor(limit/2)); recentFails = 0; }
+            if (doneCount === items.length) resolve(); else pump();
+          }
+        );
+      }
+    }
+    pump();
+  });
+}
+
+function makeCanvas(w, h) {
+  if (HAS_OFFSCREEN) { try { return new OffscreenCanvas(w, h); } catch(e) {} }
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  return c;
+}
+
+function canvasToBlob(canvas, type, quality) {
+  if (canvas.convertToBlob) return canvas.convertToBlob({ type, quality });
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob вернул null')), type, quality);
+  });
+}
+
+async function pasteFromClipboard() {
+  hideErr('url');
+  try {
+    if (!navigator.clipboard || !navigator.clipboard.readText)
+      throw new Error('Clipboard API недоступен');
+    const text = await navigator.clipboard.readText();
+    const ta = document.getElementById('yandex-url');
+    ta.value = (text || '').slice(0, 2000);
+    ta.focus();
+  } catch(e) {
+    showErr('url', 'Не удалось вставить: ' + (e.message || e.name));
+  }
+}
+
+let _currentObjectUrl = null;
+function setCurrentObjectUrl(url) {
+  if (_currentObjectUrl && _currentObjectUrl !== url) {
+    try { URL.revokeObjectURL(_currentObjectUrl); } catch(e) {}
+  }
+  _currentObjectUrl = url;
+}
+window.addEventListener('beforeunload', () => {
+  if (_currentObjectUrl) { try { URL.revokeObjectURL(_currentObjectUrl); } catch(e) {} }
+});
+
+let map, clickMarker;
+let selectedZoom = null;
+let foundData    = null;
+
+const OID_RE = /^\d{1,12}_\d{1,12}_\d{1,6}_\d{1,12}$/;
+
+function yandexUrlCoords(lon, lat, provider) {
+  return `https://api-maps.yandex.ru/services/panoramas/1.x/?l=stv&lang=ru_RU&ll=${lon},${lat}&origin=userAction&provider=${provider}`;
+}
+function yandexUrlOid(oid, provider) {
+  return `https://api-maps.yandex.ru/services/panoramas/1.x/?l=stv&lang=ru_RU&oid=${oid}&origin=userAction&provider=${provider}`;
+}
+
+function parseApiResponse(data, provider) {
+  try {
+    const inner   = data.data.Data;
+    const imgs    = inner.Images || inner.images || {};
+    const zooms   = (imgs.Zooms || imgs.zooms || []).map(z => ({width:(typeof z.width==='number'&&isFinite(z.width))?z.width:0, height:(typeof z.height==='number'&&isFinite(z.height))?z.height:0}));
+    if (!zooms.length) return null;
+    const tiles   = imgs.Tiles || imgs.tiles || {};
+    let imageId = imgs.imageId || imgs.image_id || inner.panoramaId || '';
+    if(!/^[A-Za-z0-9_-]+$/.test(imageId)) return null;
+    const coords  = (inner.Point || {}).coordinates || [null, null];
+    const address = ((inner.Address || {}).formatted) || '';
+    return { image_id: imageId, zooms,
+             tile_width: tiles.width||512, tile_height: tiles.height||512,
+             pano_lon: coords[0], pano_lat: coords[1], address };
+  } catch(e) { return null; }
+}
+
+let _lastFindError = null;
+async function yandexFind(params) {
+  _lastFindError = null;
+  const { oid, lat, lon } = params;
+  const provider = params.provider || 'streetview';
+  const providers = provider === 'unknown' ? ['air','streetview'] : [provider];
+  for (const p of providers) {
+    try {
+      const url = oid ? yandexUrlOid(oid, p) : yandexUrlCoords(lon, lat, p);
+      const r = await fetch(url, { referrerPolicy: 'no-referrer' });
+      if (!r.ok) { _lastFindError = `HTTP ${r.status} от API Яндекса`; continue; }
+      const d = await r.json();
+      if (d.status !== 'success') {
+        // Yandex returns status='error' for points without panoramas.
+        // Show a clean user-facing message; keep technical details in the console.
+        console.warn('[yandexFind] API non-success:', d.status, d.error);
+        _lastFindError = 'Здесь нет панорамы';
+        continue;
+      }
+      const result = parseApiResponse(d, p);
+      if (result) return result;
+      _lastFindError = 'Здесь нет панорамы';
+    } catch(e) {
+      _lastFindError = (e.name === 'TypeError')
+        ? 'Сеть блокирует api-maps.yandex.ru'
+        : `Ошибка: ${e.message || e.name}`;
+    }
+  }
+  return null;
+}
+
+const SHORT_URL_RE = /^https?:\/\/yandex\.[a-z]+\/maps\/-\/[A-Za-z0-9_-]+\/?(\?.*)?$/i;
+
+function parseYandexUrl(url) {
+  if (SHORT_URL_RE.test(url)) return { error: 'Короткие ссылки временно не поддерживаются' };
+  try {
+    const u  = new URL(url);
+    const qs = new URLSearchParams(u.search);
+    const isAir = url.includes('panorama[air]') || qs.get('panorama[air]') === 'true';
+    const oid = qs.get('panorama[id]') || qs.get('panorama[oid]');
+    if (oid && OID_RE.test(oid)) return { oid, provider: isAir ? 'air' : 'unknown' };
+    let lat = null, lon = null;
+    const pp = qs.get('panorama[point]');
+    if (pp) { const p = pp.split(','); lon = parseFloat(p[0]); lat = parseFloat(p[1]); }
+    if (!lat) { const ll = qs.get('ll'); if (ll) { const p = ll.split(','); lon = parseFloat(p[0]); lat = parseFloat(p[1]); } }
+    if (!lat) { const m = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/); if (m) { lat = parseFloat(m[1]); lon = parseFloat(m[2]); } }
+    if (!lat) return { error: 'Не найдены координаты в ссылке' };
+    return { lat, lon, provider: 'streetview' };
+  } catch(e) { return { error: e.message }; }
+}
+
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371000, p = Math.PI/180;
+  const a = 0.5 - Math.cos((lat2-lat1)*p)/2 + Math.cos(lat1*p)*Math.cos(lat2*p)*(1-Math.cos((lon2-lon1)*p))/2;
+  return R * 2 * Math.asin(Math.sqrt(a));
+}
+
+window.addEventListener('pageshow', () => {
+  ['yandex-url', 'oid-input', 'lat', 'lon'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+});
+
+function initMap() {
+  proj4.defs('EPSG:3395',
+    '+proj=merc +a=6378137 +b=6356752.3142 +lat_ts=0 +lon_0=0 +x_0=0 +y_0=0 +k=1 +units=m +nadgrids=@null +wktext +no_defs');
+  const yandexCRS = new L.Proj.CRS('EPSG:3395',
+    '+proj=merc +a=6378137 +b=6356752.3142 +lat_ts=0 +lon_0=0 +x_0=0 +y_0=0 +k=1 +units=m +nadgrids=@null +wktext +no_defs',
+    {
+      resolutions: (function(){ var r=[]; for(var i=0;i<=20;i++) r.push(156543.03392800014/Math.pow(2,i)); return r; })(),
+      origin: [-20037508.34, 20037508.34]
+    });
+
+  map = L.map('map', {
+    crs: yandexCRS,
+    zoomControl: true,
+    attributionControl: false,
+    preferCanvas: true,
+    fadeAnimation: true,
+    zoomAnimation: true,
+    markerZoomAnimation: true,
+    inertia: true,
+    inertiaDeceleration: 2200,
+    inertiaMaxSpeed: 1500,
+    easeLinearity: 0.1,
+    zoomSnap: 0,
+    zoomDelta: 0.5,
+    wheelDebounceTime: 50,
+    wheelPxPerZoomLevel: 180
+  }).setView([55.7558, 37.6173], 13);
+
+  L.tileLayer('https://core-sat.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', {
+    maxZoom: 19, maxNativeZoom: 19, attribution: '', subdomains: '0123'
+  }).addTo(map);
+  L.tileLayer('https://core-renderer-tiles.maps.yandex.net/tiles?l=skl&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', {
+    maxZoom: 19, maxNativeZoom: 19, attribution: '', pane: 'overlayPane'
+  }).addTo(map);
+  map.on('mousemove', e => {
+    document.getElementById('map-coords').textContent =
+      `${e.latlng.lat.toFixed(6)},  ${e.latlng.lng.toFixed(6)}`;
+  });
+  map.on('click', e => {
+    const { lat, lng } = e.latlng;
+    document.getElementById('lat').value = lat.toFixed(7);
+    document.getElementById('lon').value = lng.toFixed(7);
+    document.getElementById('map-hint').style.display = 'none';
+    placeMarker(lat, lng, false);
+  });
+}
+
+function placeMarker(lat, lng, confirmed = false) {
+  if (clickMarker) map.removeLayer(clickMarker);
+  clickMarker = L.circleMarker([lat, lng], {
+    radius: confirmed ? 9 : 7, color: '#ffffff', weight: 2,
+    fillColor: confirmed ? '#00b4ff' : '#2a3a50',
+    fillOpacity: confirmed ? 1 : 0.7,
+    className: confirmed ? 'mx-marker' : 'mx-marker-soft'
+  }).addTo(map);
+}
+
+function setBtn(id, loading) {
+  const btn = document.getElementById('btn-' + id);
+  const txt = document.getElementById('btn-' + id + '-txt');
+  btn.disabled = loading;
+  if(loading){const s=document.createElement('span');s.className='spin';txt.replaceChildren(s,document.createTextNode('ПОИСК...'));}else{const m={coords:'⟶ НАЙТИ ПАНОРАМУ',oid:'⟶ НАЙТИ ПО OID',url:'⟶ РАЗОБРАТЬ ССЫЛКУ'};txt.textContent=m[id]||'';}
+}
+function showErr(id, msg) {
+  const el = document.getElementById(id + '-err');
+  el.textContent = msg; el.style.display = 'block';
+}
+function hideErr(id) { document.getElementById(id + '-err').style.display = 'none'; }
+
+async function onFindCoords() {
+  hideErr('coords');
+  const lat = parseFloat(document.getElementById('lat').value);
+  const lon = parseFloat(document.getElementById('lon').value);
+  if (isNaN(lat)||isNaN(lon)) { showErr('coords','Введи координаты'); return; }
+  setBtn('coords', true);
+  let result = null;
+  for (const p of ['streetview','air']) {
+    result = await yandexFind({lat, lon, provider: p});
+    if (result) break;
+  }
+  setBtn('coords', false);
+  if (!result) { showErr('coords', _lastFindError || 'Панорама не найдена'); return; }
+  if (result.pano_lat && haversine(lat, lon, result.pano_lat, result.pano_lon) > 300) {
+    showErr('coords','Ближайшая панорама далеко. Попробуй другую точку.'); return;
+  }
+  foundData = result;
+  const pLat = result.pano_lat||lat, pLon = result.pano_lon||lon;
+  placeMarker(pLat, pLon, true);
+  map.setView([pLat, pLon], 15);
+  openZoomModal(result);
+}
+
+async function onFindOid() {
+  hideErr('oid');
+  const oid = document.getElementById('oid-input').value.trim();
+  if (!oid) { showErr('oid','Введи OID'); return; }
+  if (!OID_RE.test(oid)) { showErr('oid','Неверный формат OID'); return; }
+  setBtn('oid', true);
+  const result = await yandexFind({oid, provider:'air'});
+  setBtn('oid', false);
+  if (!result) { showErr('oid', _lastFindError || 'Панорама не найдена'); return; }
+  foundData = result;
+  if (result.pano_lat&&result.pano_lon) { placeMarker(result.pano_lat,result.pano_lon,true); map.setView([result.pano_lat,result.pano_lon],15); }
+  openZoomModal(result);
+}
+
+async function onParseUrl() {
+  hideErr('url');
+  const url = document.getElementById('yandex-url').value.trim();
+  if (!url) { showErr('url','Вставь ссылку'); return; }
+  setBtn('url', true);
+  const parsed = parseYandexUrl(url);
+  if (parsed.error) { showErr('url', parsed.error); setBtn('url',false); return; }
+  const result = await yandexFind(parsed);
+  setBtn('url', false);
+  if (!result) { showErr('url', _lastFindError || 'Панорама не найдена'); return; }
+  foundData = result;
+  const lat = result.pano_lat||parsed.lat, lon = result.pano_lon||parsed.lon;
+  if (lat&&lon) { placeMarker(lat,lon,true); map.setView([lat,lon],15); }
+  openZoomModal(result);
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function openZoomModal(data) {
+  selectedZoom = null;
+  document.getElementById('btn-dl').disabled = true;
+  document.getElementById('btn-dl-txt').textContent = '↓ ВЫБЕРИ КАЧЕСТВО';
+  document.getElementById('m-zoom-err').style.display = 'none';
+  document.getElementById('zoom-addr').textContent = data.address || data.image_id;
+
+  const pidx = data.zooms.length - 1;
+  const pz   = data.zooms[pidx];
+  const wrap = document.getElementById('preview-wrap');
+  wrap.innerHTML = '<div class="preview-skel"></div>';
+  if (pz) buildClientPreview(data.image_id, pidx, data.tile_width||512, data.tile_height||512, pz.width, pz.height, wrap);
+
+  const grid = document.getElementById('qgrid');
+  grid.innerHTML = '';
+  data.zooms.forEach((z, i) => {
+    const q = QUALITY[i] || {label:`Z${i}`, desc:''};
+    const c = document.createElement('div');
+    c.className = 'qcard';
+    c.appendChild(Object.assign(document.createElement("div"),{className:"qcard-lvl",textContent:q.label}));
+    c.appendChild(Object.assign(document.createElement("div"),{className:"qcard-desc",textContent:q.desc}));
+    c.appendChild(Object.assign(document.createElement("div"),{className:"qcard-px",textContent:z.width.toLocaleString()+"×"+z.height.toLocaleString()}));
+    c.onclick = () => {
+      document.querySelectorAll('.qcard').forEach(x=>x.classList.remove('sel'));
+      c.classList.add('sel');
+      selectedZoom = i;
+      document.getElementById('btn-dl').disabled = false;
+      document.getElementById('btn-dl-txt').textContent = `↓ ${q.label} · ${z.width.toLocaleString()}×${z.height.toLocaleString()}`;
+    };
+    grid.appendChild(c);
+  });
+  openModal('m-zoom');
+}
+
+async function buildClientPreview(id, zoom, tw, th, pw, ph, wrap) {
+  const xr = Math.ceil(pw / tw);
+  const yr = Math.ceil(ph / th);
+  const canvas = document.createElement('canvas');
+  canvas.width = pw; canvas.height = ph;
+  canvas.style.cssText = 'width:100%;display:block';
+  const ctx = canvas.getContext('2d');
+  const coords = [];
+  for (let x = 0; x < xr; x++) for (let y = 0; y < yr; y++) coords.push([x, y]);
+  await runPool(coords, 6, async ([x, y]) => {
+    try {
+      const img = await loadTileRetry(tileUrl(id, zoom, x, y));
+      ctx.drawImage(img, x*tw, y*th);
+    } catch(e) {}
+  });
+  wrap.replaceChildren(canvas);
+}
+
+async function startDownload() {
+  if (!foundData || selectedZoom === null) return;
+  const zoom  = selectedZoom;
+  const zInfo = foundData.zooms[zoom];
+  const tw    = foundData.tile_width  || 512;
+  const th    = foundData.tile_height || 512;
+  const pw    = zInfo.width;
+  const ph    = zInfo.height;
+  let fname = (document.getElementById('filename').value||'panorama.jpg').replace(/[\/\\:*?"<>|]/g,'_').slice(0,200);
+  if(!/\.jpe?g$/i.test(fname))fname+='.jpg';
+  const id    = foundData.image_id;
+
+  closeModal('m-zoom');
+  document.getElementById('prog-wrap').style.display = 'block';
+  document.getElementById('done-wrap').style.display = 'none';
+  document.getElementById('plog').innerHTML = '';
+  document.getElementById('track-fill').style.width = '0%';
+  document.getElementById('prog-pct').textContent = '0%';
+  plog(`${pw.toLocaleString()}×${ph.toLocaleString()}px · zoom ${zoom}`, 'inf');
+
+  const xr = Math.ceil(pw / tw);
+  const yr = Math.ceil(ph / th);
+  const total = xr * yr;
+  let done = 0;
+
+  const canvas = makeCanvas(pw, ph);
+  const ctx    = canvas.getContext('2d');
+
+  let failed = 0;
+  async function loadTile([x, y]) {
+    try {
+      const img = await loadTileRetry(tileUrl(id, zoom, x, y));
+      ctx.drawImage(img, x*tw, y*th);
+    } catch(e) { failed++; }
+    finally {
+      done++;
+      const pct = Math.round(done/total*100);
+      document.getElementById('track-fill').style.width = pct+'%';
+      document.getElementById('prog-pct').textContent   = pct+'%';
+      document.getElementById('prog-sub').textContent   =
+        `${done} / ${total} тайлов` + (failed ? ` (✗${failed})` : '');
+    }
+  }
+
+  const coords = [];
+  for (let x = 0; x < xr; x++) for (let y = 0; y < yr; y++) coords.push([x, y]);
+  for (let i = coords.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [coords[i], coords[j]] = [coords[j], coords[i]];
+  }
+
+  await runPool(coords, BATCH, loadTile);
+
+  if (failed > 0) {
+    const pctFail = (failed/total*100).toFixed(1);
+    plog(`⚠ пропущено ${failed} тайлов (${pctFail}%) после ${MAX_TILE_ATTEMPTS} попыток`, 'err');
+  }
+
+  plog('✓ склейка...', 'inf');
+  try {
+    const blob = await canvasToBlob(canvas, 'image/jpeg', 1.0);
+    const url  = URL.createObjectURL(blob);
+    setCurrentObjectUrl(url);
+    document.getElementById('prog-wrap').style.display = 'none';
+    showDone(fname, zInfo, url, blob.size);
+  } catch(e) {
+    plog('✗ ' + (e.message || 'canvas tainted или недостаточно памяти'), 'err');
+  }
+}
+
+function showDone(filename, zInfo, objectUrl, size) {
+  document.getElementById('done-wrap').style.display = 'block';
+  const mb = (size/1024/1024).toFixed(1);
+  document.getElementById('done-meta').textContent =
+    `${filename}  ·  ${zInfo.width.toLocaleString()}×${zInfo.height.toLocaleString()} px  ·  ${mb} MB`;
+  const a = document.getElementById('btn-save');
+  a.href = objectUrl; a.download = filename;
+  a.onclick = () => {
+    flashToast('Успешно сохранено в загрузки', filename, 'info', 4000);
+    setTimeout(() => {
+      try { URL.revokeObjectURL(objectUrl); } catch(e) {}
+      if (_currentObjectUrl === objectUrl) _currentObjectUrl = null;
+    }, 120000);
+  };
+}
+
+function plog(msg, cls='') {
+  const el = document.getElementById('plog');
+  const d  = document.createElement('div');
+  d.className = cls;
+  d.textContent = `[${new Date().toLocaleTimeString('ru',{hour12:false})}] ${msg}`;
+  el.appendChild(d); el.scrollTop = el.scrollHeight;
+}
+
+// ── Desktop status / toast / UA pill ────────────────────────────────────────
+const $ = (id) => document.getElementById(id);
+function escapeHtml(s){return String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));}
+
+let _toastLockUntil = 0;
+function setToast(t) {
+  // Backend polling must not stomp on a frontend flash toast.
+  if (Date.now() < _toastLockUntil) return;
+  const host = $('toastHost');
+  if (!t) { host.classList.remove('show','info','warn','err'); return; }
+  host.classList.remove('info','warn','err');
+  host.classList.add(t.kind || 'info');
+  $('toastTitle').textContent = t.title || '';
+  $('toastDesc').textContent  = t.desc  || '';
+  host.classList.add('show');
+}
+function flashToast(title, desc, kind, durationMs) {
+  durationMs = durationMs || 4000;
+  _toastLockUntil = Date.now() + durationMs;
+  const host = $('toastHost');
+  host.classList.remove('info','warn','err');
+  host.classList.add(kind || 'info');
+  $('toastTitle').textContent = title || '';
+  $('toastDesc').textContent  = desc  || '';
+  host.classList.add('show');
+  setTimeout(() => {
+    if (Date.now() >= _toastLockUntil) {
+      host.classList.remove('show','info','warn','err');
+    }
+  }, durationMs + 30);
+}
+function setPill(state, txt) {
+  const el = $('protPill');
+  el.classList.remove('ok','warn','err');
+  if (state) el.classList.add(state);
+  $('protPillTxt').textContent = txt;
+}
+function renderUA(ua, source) {
+  const el = $('idUa'); if (!el) return;
+  if (!ua) { el.innerHTML = '<span class="pending">picking…</span>'; return; }
+  const badge = source ? `<span class="badge ${source}">${source}</span>` : '';
+  el.innerHTML = escapeHtml(ua) + badge;
+}
+function renderIp(ip) {
+  const el = $('idIp'); if (!el) return;
+  el.innerHTML = ip ? escapeHtml(ip) : '<span class="pending">resolving…</span>';
+}
+
+async function pollStatus() {
+  try {
+    const inv = (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke) || null;
+    if (!inv) { setPill('err', 'No backend'); return; }
+    const s = await inv('get_status');
+    renderIp(s.ip);
+    renderUA(s.ua, s.ua_source);
+    setToast(s.toast);
+    if (s.toast && s.toast.kind === 'err')        setPill('err',  'Offline');
+    else if (s.toast && s.toast.kind === 'warn')  setPill('warn', 'Whitelist');
+    else if (s.toast && s.toast.kind === 'info')  setPill('warn', 'Updating');
+    else if (s.ip && s.ua)                        setPill('ok',   'Protected');
+    else                                          setPill('',     'Booting');
+  } catch (e) {
+    setPill('err', 'No backend');
+  }
+}
+setInterval(pollStatus, 1000);
+pollStatus();
+</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/proj4@2.9.2/dist/proj4.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/proj4leaflet@1.0.2/src/proj4leaflet.js" onload="initMap()"></script>
+</body>
+</html>

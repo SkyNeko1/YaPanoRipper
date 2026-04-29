@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
 
 ![YaPanoRipper](logo.png)
 
@@ -31,6 +31,23 @@
 ### → **[yap.skyne.ru](https://yap.skyne.ru)** ←
 
 Ничего ставить не надо. Всё работает прямо во вкладке.
+
+---
+
+## 🖥 Десктоп-версия для Windows
+
+Нативное приложение на Tauri (Rust) с автоматической ротацией User-Agent для обхода anti-bot ограничений.
+
+**Скачать v1.0:**
+
+- 📦 **[YaPanoRipper-setup.exe](YaPanoRipper-setup.exe)** — установщик (1.7 МБ)
+- 🚀 **[YaPanoRipper-portable.exe](YaPanoRipper-portable.exe)** — портативная версия (4.5 МБ)
+
+Или из [релизов](https://github.com/SkyNeko1/YaPanoRipper/releases).
+
+> ⚠️ **Автообновление пока не реализовано.** Чтобы получить новую версию — скачай заново из релизов.
+
+Исходники десктоп-версии лежат в `windows/`.
 
 ---
 
@@ -117,3 +134,4 @@
 made with ♥ and [Claude](https://claude.ai)
 
 </div>
+
