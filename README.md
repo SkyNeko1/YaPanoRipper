@@ -38,7 +38,7 @@
 
 Нативное приложение на Tauri (Rust) с автоматической ротацией User-Agent для обхода anti-bot ограничений.
 
-**Скачать v1.0:**
+**Скачать v1.1:**
 
 - 📦 **[YaPanoRipper-setup.exe](YaPanoRipper-setup.exe)** — установщик (1.7 МБ)
 - 🚀 **[YaPanoRipper-portable.exe](YaPanoRipper-portable.exe)** — портативная версия (4.5 МБ)
