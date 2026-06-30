@@ -4,7 +4,7 @@
 
 **Download Yandex Maps panoramas at full resolution**
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-yapanoripper.github.io-0c1422?style=flat-square&logo=googlechrome&logoColor=00b4ff)](https://yapanoripper.github.io)
+[![Web App](https://img.shields.io/badge/Web_App-yapanoripper.github.io-0c1422?style=flat-square&logo=googlechrome&logoColor=00b4ff)](https://yapanoripper.github.io)
 [![License](https://img.shields.io/badge/License-Elastic--2.0-0c1422?style=flat-square&logoColor=00b4ff)](LICENSE)
 [![Built with Claude](https://img.shields.io/badge/Built_with-Claude_AI-0c1422?style=flat-square&logo=anthropic&logoColor=00b4ff)](https://claude.ai)
 
