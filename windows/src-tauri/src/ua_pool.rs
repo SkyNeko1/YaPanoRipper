@@ -4,6 +4,7 @@
 //! jsdelivr fallback, persist (IP, UA) pair so the same UA is reused per IP.
 use rand::seq::SliceRandom;
 use std::collections::HashMap;
+use std::sync::Mutex;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::state::PersistedState;
@@ -53,6 +54,12 @@ fn pool_urls(name: &str) -> [String; 2] {
     ]
 }
 
+fn is_valid_ua(value: &str) -> bool {
+    (24..=512).contains(&value.len())
+        && value.starts_with("Mozilla/5.0")
+        && !value.chars().any(char::is_control)
+}
+
 fn fetch_one(name: &str) -> Option<Vec<String>> {
     let client = reqwest::blocking::Client::builder()
         .timeout(Duration::from_secs(10))
@@ -65,7 +72,7 @@ fn fetch_one(name: &str) -> Option<Vec<String>> {
                     let lines: Vec<String> = text
                         .lines()
                         .map(|l| l.trim().to_string())
-                        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+                        .filter(|l| !l.is_empty() && !l.starts_with('#') && is_valid_ua(l))
                         .collect();
                     if !lines.is_empty() {
                         return Some(lines);
@@ -78,13 +85,20 @@ fn fetch_one(name: &str) -> Option<Vec<String>> {
 }
 
 pub fn fetch_all_pools() -> HashMap<String, Vec<String>> {
-    let mut out = HashMap::new();
-    for name in POOL_NAMES {
-        if let Some(list) = fetch_one(name) {
-            out.insert(name.to_string(), list);
+    let out = Mutex::new(HashMap::new());
+    std::thread::scope(|scope| {
+        for name in POOL_NAMES {
+            let out = &out;
+            scope.spawn(move || {
+                if let Some(list) = fetch_one(name) {
+                    if let Ok(mut pools) = out.lock() {
+                        pools.insert(name.to_string(), list);
+                    }
+                }
+            });
         }
-    }
-    out
+    });
+    out.into_inner().unwrap_or_default()
 }
 
 pub fn is_pool_stale(s: &PersistedState) -> bool {
@@ -119,9 +133,7 @@ fn pick_ua(pools: &HashMap<String, Vec<String>>) -> Option<String> {
 ///   - Otherwise pick a new UA from the external pool, save (IP, UA).
 ///   - If external pool is empty -> use BUNDLED_UA_POOL, mark source="bundled".
 pub fn get_or_assign_ua(state: &mut PersistedState, current_ip: Option<String>) -> String {
-    if let (Some(cur), Some(saved_ip), Some(saved_ua)) =
-        (&current_ip, &state.ip, &state.ua)
-    {
+    if let (Some(cur), Some(saved_ip), Some(saved_ua)) = (&current_ip, &state.ip, &state.ua) {
         if cur == saved_ip {
             return saved_ua.clone();
         }

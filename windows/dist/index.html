@@ -10,7 +10,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="referrer" content="no-referrer">
-<title>PANORAMA RIPPER · DESKTOP</title>
+<title>YaPanoRipper Desktop</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Bebas+Neue&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
@@ -104,6 +106,12 @@ textarea { resize:none; height:54px; font-size:11px; }
 
 /* progress */
 .prog-wrap { padding:16px 18px; border-bottom:1px solid var(--border); display:none; }
+.prog-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+.prog-label { font-size:9px; letter-spacing:.25em; color:var(--blue); text-transform:uppercase; }
+.btn-cancel { width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; background:var(--s2); border:1px solid rgba(255,51,85,0.35); color:var(--red); cursor:pointer; font-family:'JetBrains Mono',monospace; font-size:15px; line-height:1; transition:color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, transform 0.12s ease, opacity 0.18s ease; }
+.btn-cancel:hover { background:rgba(255,51,85,0.08); border-color:rgba(255,51,85,0.65); }
+.btn-cancel:active { transform:scale(0.94); }
+.btn-cancel:disabled { cursor:default; opacity:0.45; transform:none; }
 .prog-pct { font-family:'Bebas Neue',sans-serif; font-size:38px; color:var(--blue); line-height:1; }
 .prog-sub { font-size:9px; color:var(--muted); margin-bottom:7px; }
 .track { height:2px; background:var(--border); margin-bottom:8px; }
@@ -308,7 +316,7 @@ textarea { resize:none; height:54px; font-size:11px; }
 
 <aside class="sidebar">
 
-  <div class="sec">
+  <div class="sec sec-coords">
     <div class="sec-title">01 · Координаты</div>
     <div class="hint-box">Для <strong>уличных панорам</strong>. Кликни на карту или введи вручную.</div>
     <div class="row2">
@@ -319,7 +327,7 @@ textarea { resize:none; height:54px; font-size:11px; }
     <div class="err" id="coords-err"></div>
   </div>
 
-  <div class="sec">
+  <div class="sec sec-oid">
     <div class="sec-title">02 · OID аэропанорамы</div>
     <div class="hint-box">Для <strong>аэрофотопанорам</strong> — OID из URL Яндекса (4 числа через _).</div>
     <div class="field"><input type="text" id="oid-input" maxlength="60" placeholder="XXXX_XXXXXXXXX_XX_XXXXXXXXXX" autocomplete="off"></div>
@@ -327,7 +335,7 @@ textarea { resize:none; height:54px; font-size:11px; }
     <div class="err" id="oid-err"></div>
   </div>
 
-  <div class="sec">
+  <div class="sec sec-url">
     <div class="sec-title">03 · Ссылка</div>
     <div class="hint-box">Любая ссылка Яндекс.Карты — <strong>уличная или аэро</strong>.</div>
     <div class="field url-wrap">
@@ -342,7 +350,10 @@ textarea { resize:none; height:54px; font-size:11px; }
   </div>
 
   <div class="prog-wrap" id="prog-wrap">
-    <div style="font-size:9px;letter-spacing:.25em;color:var(--blue);text-transform:uppercase;margin-bottom:8px">⟳ ЗАГРУЗКА</div>
+    <div class="prog-head">
+      <div class="prog-label">⟳ ЗАГРУЗКА</div>
+      <button type="button" class="btn-cancel" id="btn-cancel-dl" onclick="cancelDownload()" title="Отменить загрузку" aria-label="Отменить загрузку">×</button>
+    </div>
     <div class="prog-pct" id="prog-pct">0%</div>
     <div class="prog-sub" id="prog-sub">инициализация...</div>
     <div class="track"><div class="track-fill" id="track-fill"></div></div>
@@ -447,14 +458,23 @@ async function loadTileRetry(url) {
   throw lastErr;
 }
 
-async function runPool(items, initialLimit, worker) {
+async function runPool(items, initialLimit, worker, shouldStop) {
   let idx = 0, running = 0, doneCount = 0;
   let limit = Math.max(1, initialLimit);
   let recentFails = 0, recentOks = 0;
+  const stopped = () => shouldStop && shouldStop();
   return new Promise((resolve) => {
-    if (items.length === 0) return resolve();
+    if (items.length === 0) return resolve({ cancelled: false });
+    function finishIfDone() {
+      if (doneCount === items.length || (stopped() && running === 0)) {
+        resolve({ cancelled: !!stopped() });
+        return true;
+      }
+      return false;
+    }
     function pump() {
-      while (running < limit && idx < items.length) {
+      if (finishIfDone()) return;
+      while (running < limit && idx < items.length && !stopped()) {
         const i = idx++;
         running++;
         Promise.resolve(worker(items[i], i)).then(
@@ -463,16 +483,17 @@ async function runPool(items, initialLimit, worker) {
             recentOks++;
             if (recentOks > 10 && limit < initialLimit) { limit++; recentOks = 0; }
             recentFails = Math.max(0, recentFails - 1);
-            if (doneCount === items.length) resolve(); else pump();
+            if (!finishIfDone()) pump();
           },
           () => {
             running--; doneCount++;
             recentFails++; recentOks = 0;
             if (recentFails >= 3 && limit > 2) { limit = Math.max(2, Math.floor(limit/2)); recentFails = 0; }
-            if (doneCount === items.length) resolve(); else pump();
+            if (!finishIfDone()) pump();
           }
         );
       }
+      finishIfDone();
     }
     pump();
   });
@@ -520,6 +541,19 @@ window.addEventListener('beforeunload', () => {
 let map, clickMarker;
 let selectedZoom = null;
 let foundData    = null;
+let downloadCancelRequested = false;
+
+function isDownloadCancelled() {
+  return downloadCancelRequested;
+}
+
+function cancelDownload() {
+  downloadCancelRequested = true;
+  const btn = document.getElementById('btn-cancel-dl');
+  if (btn) btn.disabled = true;
+  const sub = document.getElementById('prog-sub');
+  if (sub) sub.textContent = 'отмена...';
+}
 
 const OID_RE = /^\d{1,12}_\d{1,12}_\d{1,6}_\d{1,12}$/;
 
@@ -561,8 +595,6 @@ async function yandexFind(params) {
       const d = await r.json();
       if (d.status !== 'success') {
         // Yandex returns status='error' for points without panoramas.
-        // Show a clean user-facing message; keep technical details in the console.
-        console.warn('[yandexFind] API non-success:', d.status, d.error);
         _lastFindError = 'Здесь нет панорамы';
         continue;
       }
@@ -799,10 +831,13 @@ async function startDownload() {
   let fname = (document.getElementById('filename').value||'panorama.jpg').replace(/[\/\\:*?"<>|]/g,'_').slice(0,200);
   if(!/\.jpe?g$/i.test(fname))fname+='.jpg';
   const id    = foundData.image_id;
+  downloadCancelRequested = false;
 
   closeModal('m-zoom');
   document.getElementById('prog-wrap').style.display = 'block';
   document.getElementById('done-wrap').style.display = 'none';
+  const cancelBtn = document.getElementById('btn-cancel-dl');
+  if (cancelBtn) cancelBtn.disabled = false;
   document.getElementById('plog').innerHTML = '';
   document.getElementById('track-fill').style.width = '0%';
   document.getElementById('prog-pct').textContent = '0%';
@@ -818,17 +853,21 @@ async function startDownload() {
 
   let failed = 0;
   async function loadTile([x, y]) {
+    if (downloadCancelRequested) return;
     try {
       const img = await loadTileRetry(tileUrl(id, zoom, x, y));
+      if (downloadCancelRequested) return;
       ctx.drawImage(img, x*tw, y*th);
     } catch(e) { failed++; }
     finally {
       done++;
-      const pct = Math.round(done/total*100);
-      document.getElementById('track-fill').style.width = pct+'%';
-      document.getElementById('prog-pct').textContent   = pct+'%';
-      document.getElementById('prog-sub').textContent   =
-        `${done} / ${total} тайлов` + (failed ? ` (✗${failed})` : '');
+      if (!downloadCancelRequested) {
+        const pct = Math.round(done/total*100);
+        document.getElementById('track-fill').style.width = pct+'%';
+        document.getElementById('prog-pct').textContent   = pct+'%';
+        document.getElementById('prog-sub').textContent   =
+          `${done} / ${total} тайлов` + (failed ? ` (✗${failed})` : '');
+      }
     }
   }
 
@@ -839,7 +878,12 @@ async function startDownload() {
     [coords[i], coords[j]] = [coords[j], coords[i]];
   }
 
-  await runPool(coords, BATCH, loadTile);
+  const poolResult = await runPool(coords, BATCH, loadTile, isDownloadCancelled);
+  if (poolResult.cancelled) {
+    document.getElementById('prog-sub').textContent = 'отменено';
+    plog('✕ загрузка отменена', 'err');
+    return;
+  }
 
   if (failed > 0) {
     const pctFail = (failed/total*100).toFixed(1);
@@ -884,7 +928,6 @@ function plog(msg, cls='') {
 
 // ── Desktop status / toast / UA pill ────────────────────────────────────────
 const $ = (id) => document.getElementById(id);
-function escapeHtml(s){return String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));}
 
 let _toastLockUntil = 0;
 function setToast(t) {
@@ -919,24 +962,16 @@ function setPill(state, txt) {
   if (state) el.classList.add(state);
   $('protPillTxt').textContent = txt;
 }
-function renderUA(ua, source) {
-  const el = $('idUa'); if (!el) return;
-  if (!ua) { el.innerHTML = '<span class="pending">picking…</span>'; return; }
-  const badge = source ? `<span class="badge ${source}">${source}</span>` : '';
-  el.innerHTML = escapeHtml(ua) + badge;
-}
-function renderIp(ip) {
-  const el = $('idIp'); if (!el) return;
-  el.innerHTML = ip ? escapeHtml(ip) : '<span class="pending">resolving…</span>';
+
+function tauriInvoke(command, args) {
+  const inv = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke;
+  if (!inv) return Promise.reject(new Error('Tauri backend unavailable'));
+  return inv(command, args);
 }
 
 async function pollStatus() {
   try {
-    const inv = (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke) || null;
-    if (!inv) { setPill('err', 'No backend'); return; }
-    const s = await inv('get_status');
-    renderIp(s.ip);
-    renderUA(s.ua, s.ua_source);
+    const s = await tauriInvoke('get_status');
     setToast(s.toast);
     if (s.toast && s.toast.kind === 'err')        setPill('err',  'Offline');
     else if (s.toast && s.toast.kind === 'warn')  setPill('warn', 'Whitelist');
@@ -956,16 +991,19 @@ window.addEventListener('contextmenu', e => e.preventDefault());
 
 // Tauri WebView2 ignores target="_blank", so the GitHub button must be
 // dispatched through a Rust command that hands the URL off to the OS.
-document.addEventListener('DOMContentLoaded', () => {
+function wireGithubLink() {
   const a = document.getElementById('ghLink');
   if (!a) return;
   a.addEventListener('click', (e) => {
     e.preventDefault();
-    const inv = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke;
-    if (inv) inv('open_github').catch(() => {});
-    else window.open(a.href, '_blank');
+    tauriInvoke('open_github').catch(() => window.open(a.href, '_blank'));
   });
-});
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', wireGithubLink, { once: true });
+} else {
+  wireGithubLink();
+}
 </script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/proj4@2.9.2/dist/proj4.js"></script>
