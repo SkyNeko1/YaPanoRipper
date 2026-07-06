@@ -16,7 +16,7 @@
 
 ## ⬡ What is this
 
-**YaPanoRipper** is a tool for downloading Yandex Maps panoramas at their original resolution. Supports both street-level and aerial panoramas. Assembles the full image from tiles and exports a single JPEG.
+**YaPanoRipper** is a tool for downloading Yandex Maps panoramas at their original resolution. Supports both street-level and aerial panoramas. Assembles the full image from tiles and exports it as JPEG or PNG.
 
 ```
 19712 × 9856 px  ·  HI-RES
@@ -38,12 +38,9 @@ No installation. Everything works right in the tab.
 
 Native Tauri (Rust) application with automatic User-Agent rotation to bypass anti-bot limits.
 
-**Download v1.1:**
+**Download the latest version:**
 
-- 📦 **[YaPanoRipper-setup.exe](YaPanoRipper-setup.exe)** — installer (1.7 MB)
-- 🚀 **[YaPanoRipper-portable.exe](YaPanoRipper-portable.exe)** — portable build (4.5 MB)
-
-Or grab them from [Releases](https://github.com/SkyNeko1/YaPanoRipper/releases).
+- 📦 **[YaPanoRipper Releases](https://github.com/SkyNeko1/YaPanoRipper/releases)** — Windows installer and portable build
 
 > ⚠️ **Auto-update is not implemented yet.** To get a newer version, download it again from Releases.
 
@@ -57,6 +54,8 @@ Desktop sources live in `windows/`.
 - 🚗 **Street panoramas** — via coordinates or link
 - 🗺 **Interactive map** — Yandex Maps
 - 📐 **Quality selector** — HI-RES / HIGH / MEDIUM / LOW
+- 💾 **Export** — JPEG by default, optional PNG
+- 📍 **EXIF GPS** — panorama coordinates in JPEG when available
 - 🖼 **Full preview** — entire panorama shown before download
 - 📋 **Paste from clipboard** — one-click paste for OID / URL
 
