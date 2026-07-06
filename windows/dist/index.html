@@ -9,6 +9,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Сайт для скачивания панорам Яндекс Карт в оригинальном разрешении.">
 <meta name="referrer" content="no-referrer">
 <title>YaPanoRipper Desktop</title>
 <link rel="icon" type="image/png" href="favicon.png">
@@ -88,8 +89,8 @@ body { font-family:'JetBrains Mono',monospace; background:var(--bg); color:var(-
 
 .field { margin-bottom:10px; }
 label { display:block; font-size:9px; letter-spacing:0.18em; color:var(--muted); text-transform:uppercase; margin-bottom:4px; }
-input[type=text], textarea { width:100%; background:var(--s2); border:1px solid var(--border); color:var(--text); font-family:'JetBrains Mono',monospace; font-size:12px; padding:8px 10px; outline:none; transition:border-color 0.2s; }
-input:focus, textarea:focus { border-color:rgba(0,180,255,0.5); }
+input[type=text], textarea, select { width:100%; background:var(--s2); border:1px solid var(--border); color:var(--text); font-family:'JetBrains Mono',monospace; font-size:12px; padding:8px 10px; outline:none; transition:border-color 0.2s; }
+input:focus, textarea:focus, select:focus { border-color:rgba(0,180,255,0.5); }
 textarea { resize:none; height:54px; font-size:11px; }
 .row2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 
@@ -192,6 +193,7 @@ textarea { resize:none; height:54px; font-size:11px; }
 .fname-row { display:flex; gap:8px; align-items:center; }
 .fname-row label { margin:0; white-space:nowrap; }
 .fname-row input { flex:1; margin:0; }
+.format-select { flex:0 0 82px; height:34px; cursor:pointer; text-transform:uppercase; }
 
 .url-wrap { position:relative; }
 .url-wrap textarea { padding-right:96px; }
@@ -404,6 +406,10 @@ textarea { resize:none; height:54px; font-size:11px; }
       <div class="fname-row">
         <label>Файл</label>
         <input type="text" id="filename" value="panorama.jpg">
+        <select id="format-select" class="format-select" onchange="onFormatChange()" aria-label="Формат файла">
+          <option value="jpeg" selected>JPEG</option>
+          <option value="png">PNG</option>
+        </select>
       </div>
     </div>
     <div class="modal-err" id="m-zoom-err"></div>
@@ -509,8 +515,140 @@ function makeCanvas(w, h) {
 function canvasToBlob(canvas, type, quality) {
   if (canvas.convertToBlob) return canvas.convertToBlob({ type, quality });
   return new Promise((resolve, reject) => {
-    canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob вернул null')), type, quality);
+    canvas.toBlob(b => b ? resolve(b) : reject(new Error('Браузер не смог сохранить изображение в выбранном формате.')), type, quality);
   });
+}
+
+function getSelectedFormat() {
+  const el = document.getElementById('format-select');
+  return el && el.value === 'png' ? 'png' : 'jpeg';
+}
+
+function formatExt(format) {
+  return format === 'png' ? 'png' : 'jpg';
+}
+
+function formatMime(format) {
+  return format === 'png' ? 'image/png' : 'image/jpeg';
+}
+
+function normalizeFilename(name, format) {
+  const fallback = 'panorama';
+  const clean = String(name || fallback)
+    .replace(/[\/\\:*?"<>|]/g, '_')
+    .replace(/\.(jpe?g|png)$/i, '')
+    .slice(0, 200) || fallback;
+  return `${clean}.${formatExt(format)}`;
+}
+
+function onFormatChange() {
+  const filename = document.getElementById('filename');
+  if (filename) filename.value = normalizeFilename(filename.value, getSelectedFormat());
+}
+
+function resetExportFormat() {
+  const format = document.getElementById('format-select');
+  if (format) format.value = 'jpeg';
+  onFormatChange();
+}
+
+function writeU16BE(bytes, offset, value) {
+  bytes[offset] = (value >> 8) & 255;
+  bytes[offset + 1] = value & 255;
+}
+
+function gpsDms(value) {
+  const abs = Math.abs(Number(value));
+  const deg = Math.floor(abs);
+  const minFloat = (abs - deg) * 60;
+  const min = Math.floor(minFloat);
+  const sec = Math.round((minFloat - min) * 60 * 1000000);
+  return [[deg, 1], [min, 1], [sec, 1000000]];
+}
+
+function buildGpsExifSegment(lat, lon) {
+  const ifd0Offset = 8;
+  const ifd0Entries = 1;
+  const ifd0Size = 2 + ifd0Entries * 12 + 4;
+  const gpsOffset = ifd0Offset + ifd0Size;
+  const gpsEntries = 5;
+  const gpsSize = 2 + gpsEntries * 12 + 4;
+  const latOffset = gpsOffset + gpsSize;
+  const lonOffset = latOffset + 24;
+  const tiffSize = lonOffset + 24;
+  const payloadSize = 6 + tiffSize;
+  const segment = new Uint8Array(4 + payloadSize);
+  const view = new DataView(segment.buffer);
+  segment[0] = 0xff;
+  segment[1] = 0xe1;
+  writeU16BE(segment, 2, payloadSize + 2);
+  segment.set([0x45,0x78,0x69,0x66,0,0], 4);
+
+  const tiff = 10;
+  segment[tiff] = 0x49;
+  segment[tiff + 1] = 0x49;
+  view.setUint16(tiff + 2, 42, true);
+  view.setUint32(tiff + 4, ifd0Offset, true);
+
+  function writeEntry(base, index, tag, type, count, value) {
+    const pos = base + 2 + index * 12;
+    view.setUint16(pos, tag, true);
+    view.setUint16(pos + 2, type, true);
+    view.setUint32(pos + 4, count, true);
+    if (Array.isArray(value)) {
+      segment.fill(0, pos + 8, pos + 12);
+      segment.set(value.slice(0, 4), pos + 8);
+    } else {
+      view.setUint32(pos + 8, value, true);
+    }
+  }
+
+  const ifd0 = tiff + ifd0Offset;
+  view.setUint16(ifd0, ifd0Entries, true);
+  writeEntry(ifd0, 0, 0x8825, 4, 1, gpsOffset);
+  view.setUint32(ifd0 + 2 + ifd0Entries * 12, 0, true);
+
+  const gps = tiff + gpsOffset;
+  view.setUint16(gps, gpsEntries, true);
+  writeEntry(gps, 0, 0x0000, 1, 4, [2, 3, 0, 0]);
+  writeEntry(gps, 1, 0x0001, 2, 2, [lat >= 0 ? 78 : 83, 0, 0, 0]);
+  writeEntry(gps, 2, 0x0002, 5, 3, latOffset);
+  writeEntry(gps, 3, 0x0003, 2, 2, [lon >= 0 ? 69 : 87, 0, 0, 0]);
+  writeEntry(gps, 4, 0x0004, 5, 3, lonOffset);
+  view.setUint32(gps + 2 + gpsEntries * 12, 0, true);
+
+  function writeRationals(offset, values) {
+    values.forEach(([num, den], index) => {
+      const pos = tiff + offset + index * 8;
+      view.setUint32(pos, num, true);
+      view.setUint32(pos + 4, den, true);
+    });
+  }
+  writeRationals(latOffset, gpsDms(lat));
+  writeRationals(lonOffset, gpsDms(lon));
+  return segment;
+}
+
+async function addGpsExifToJpegBlob(blob, lat, lon) {
+  lat = Number(lat);
+  lon = Number(lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return blob;
+  try {
+    const jpeg = new Uint8Array(await blob.arrayBuffer());
+    if (jpeg[0] !== 0xff || jpeg[1] !== 0xd8) return blob;
+    let insertAt = 2;
+    while (insertAt + 4 < jpeg.length && jpeg[insertAt] === 0xff) {
+      const marker = jpeg[insertAt + 1];
+      if (marker < 0xe0 || marker > 0xef) break;
+      const size = (jpeg[insertAt + 2] << 8) | jpeg[insertAt + 3];
+      if (size < 2) break;
+      insertAt += 2 + size;
+    }
+    const exif = buildGpsExifSegment(lat, lon);
+    return new Blob([jpeg.slice(0, insertAt), exif, jpeg.slice(insertAt)], { type: 'image/jpeg' });
+  } catch(e) {
+    return blob;
+  }
 }
 
 async function pasteFromClipboard() {
@@ -591,23 +729,29 @@ async function yandexFind(params) {
     try {
       const url = oid ? yandexUrlOid(oid, p) : yandexUrlCoords(lon, lat, p);
       const r = await fetch(url, { referrerPolicy: 'no-referrer' });
-      if (!r.ok) { _lastFindError = `HTTP ${r.status} от API Яндекса`; continue; }
+      if (!r.ok) { _lastFindError = yandexHttpError(r.status); continue; }
       const d = await r.json();
       if (d.status !== 'success') {
         // Yandex returns status='error' for points without panoramas.
-        _lastFindError = 'Здесь нет панорамы';
+        _lastFindError = 'Панорама в этой точке не найдена';
         continue;
       }
       const result = parseApiResponse(d, p);
       if (result) return result;
-      _lastFindError = 'Здесь нет панорамы';
+      _lastFindError = 'Панорама в этой точке не найдена';
     } catch(e) {
       _lastFindError = (e.name === 'TypeError')
-        ? 'Сеть блокирует api-maps.yandex.ru'
+        ? 'Не удалось получить данные от Яндекс.Карт. Проверь подключение к интернету.'
         : `Ошибка: ${e.message || e.name}`;
     }
   }
   return null;
+}
+
+function yandexHttpError(status) {
+  if (status === 429) return 'Яндекс.Карты временно отказали в запросе (HTTP 429). Попробуй позже.';
+  if (status >= 500) return `Ошибка API Яндекса (HTTP ${status}). Попробуй другую точку или повтори позже.`;
+  return `Ошибка API Яндекса (HTTP ${status}). Попробуй другую точку или повтори позже.`;
 }
 
 const SHORT_URL_RE = /^https?:\/\/yandex\.[a-z]+\/maps\/-\/[A-Za-z0-9_-]+\/?(\?.*)?$/i;
@@ -770,6 +914,7 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 
 function openZoomModal(data) {
   selectedZoom = null;
+  resetExportFormat();
   document.getElementById('btn-dl').disabled = true;
   document.getElementById('btn-dl-txt').textContent = '↓ ВЫБЕРИ КАЧЕСТВО';
   document.getElementById('m-zoom-err').style.display = 'none';
@@ -828,8 +973,10 @@ async function startDownload() {
   const th    = foundData.tile_height || 512;
   const pw    = zInfo.width;
   const ph    = zInfo.height;
-  let fname = (document.getElementById('filename').value||'panorama.jpg').replace(/[\/\\:*?"<>|]/g,'_').slice(0,200);
-  if(!/\.jpe?g$/i.test(fname))fname+='.jpg';
+  const format = getSelectedFormat();
+  const mime = formatMime(format);
+  let fname = normalizeFilename(document.getElementById('filename').value || 'panorama', format);
+  document.getElementById('filename').value = fname;
   const id    = foundData.image_id;
   downloadCancelRequested = false;
 
@@ -886,19 +1033,20 @@ async function startDownload() {
   }
 
   if (failed > 0) {
-    const pctFail = (failed/total*100).toFixed(1);
-    plog(`⚠ пропущено ${failed} тайлов (${pctFail}%) после ${MAX_TILE_ATTEMPTS} попыток`, 'err');
+    plog(`Не удалось скачать часть тайлов: ${failed} из ${total}. Итоговое изображение может быть с пропусками.`, 'err');
   }
 
   plog('✓ склейка...', 'inf');
   try {
-    const blob = await canvasToBlob(canvas, 'image/jpeg', 1.0);
+    let blob = await canvasToBlob(canvas, mime, format === 'jpeg' ? 1.0 : undefined);
+    if (format === 'jpeg') blob = await addGpsExifToJpegBlob(blob, foundData.pano_lat, foundData.pano_lon);
     const url  = URL.createObjectURL(blob);
     setCurrentObjectUrl(url);
     document.getElementById('prog-wrap').style.display = 'none';
     showDone(fname, zInfo, url, blob.size);
   } catch(e) {
-    plog('✗ ' + (e.message || 'canvas tainted или недостаточно памяти'), 'err');
+    const msg = e.message || 'Не удалось собрать изображение. Возможно, не хватает памяти для такого качества.';
+    plog('✗ ' + msg, 'err');
   }
 }
 
