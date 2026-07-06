@@ -31,8 +31,8 @@ fn reset_app(state: tauri::State<AppState>) {
 fn open_github() -> Result<(), String> {
     let url = "https://github.com/SkyNeko1/YaPanoRipper";
     #[cfg(target_os = "windows")]
-    let res = std::process::Command::new("cmd")
-        .args(["/C", "start", "", url])
+    let res = std::process::Command::new("rundll32")
+        .args(["url.dll,FileProtocolHandler", url])
         .spawn();
     #[cfg(target_os = "linux")]
     let res = std::process::Command::new("xdg-open").arg(url).spawn();
@@ -47,7 +47,12 @@ pub fn run() {
 
     tauri::Builder::default()
         .manage(app_state.clone())
-        .invoke_handler(tauri::generate_handler![get_status, force_update, reset_app, open_github])
+        .invoke_handler(tauri::generate_handler![
+            get_status,
+            force_update,
+            reset_app,
+            open_github
+        ])
         .setup(move |app| {
             // Kick off boot sequence in a background thread.
             let st = app_state.clone();
