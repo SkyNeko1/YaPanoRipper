@@ -3,6 +3,7 @@ mod app_state;
 mod network;
 mod state;
 mod ua_pool;
+mod updates;
 
 use app_state::AppState;
 use std::thread;
@@ -51,7 +52,9 @@ pub fn run() {
             get_status,
             force_update,
             reset_app,
-            open_github
+            open_github,
+            updates::check_app_update,
+            updates::install_app_update
         ])
         .setup(move |app| {
             // Kick off boot sequence in a background thread.

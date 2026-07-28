@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Bebas+Neue&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="vendor/leaflet.css"/>
 <style>
 :root {
   --bg:     #04080f;
@@ -67,6 +67,9 @@ body { font-family:'JetBrains Mono',monospace; background:var(--bg); color:var(-
 .hdr-gh:hover { color:var(--blue); border-color:rgba(0,180,255,0.35); background:rgba(0,180,255,0.06); }
 .hdr-gh:active { transform:scale(0.94); }
 .hdr-gh svg { width:16px; height:16px; fill:currentColor; display:block; }
+.hdr-about { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; color:var(--muted); border:1px solid var(--border); background:var(--s2); cursor:pointer; font-family:'Syne',sans-serif; font-size:13px; font-weight:800; line-height:1; transition:color 0.18s, border-color 0.18s, background-color 0.18s, transform 0.12s; }
+.hdr-about:hover { color:var(--blue); border-color:rgba(0,180,255,0.35); background:rgba(0,180,255,0.06); }
+.hdr-about:active { transform:scale(0.94); }
 
 /* sidebar */
 .sidebar { border-right:1px solid var(--border); background:var(--s1); display:flex; flex-direction:column; overflow-y:auto; }
@@ -291,6 +294,62 @@ textarea { resize:none; height:54px; font-size:11px; }
 .toast-host.err  .toast .dot   { background:var(--red); box-shadow:0 0 10px var(--red); }
 .toast-host.err  .toast .title { color:var(--red); }
 
+/* about screen */
+.about-screen { position:fixed; inset:0; z-index:2200; overflow:hidden; background:#0a1018; opacity:0; pointer-events:none; transition:opacity 0.22s ease; }
+.about-screen.open { opacity:1; pointer-events:auto; }
+.about-video,
+.about-fallback,
+.about-base { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.about-video { opacity:0; transition:opacity .28s ease; }
+.about-video.ready { opacity:1; }
+.about-fallback { display:none; }
+.about-base {
+  background:
+    linear-gradient(135deg, #123456 0%, #7fb5d4 46%, #eef5f7 100%),
+    radial-gradient(circle at 70% 28%, rgba(255,255,255,.55), transparent 34%);
+  filter:saturate(.92);
+}
+.about-shade {
+  position:absolute; inset:0;
+  background:
+    linear-gradient(90deg, rgba(5,8,12,.42), rgba(5,8,12,.08) 56%, rgba(5,8,12,.22)),
+    linear-gradient(0deg, rgba(5,7,11,.38), rgba(5,7,11,.02) 50%, rgba(5,7,11,.2));
+}
+.about-top { position:absolute; top:clamp(18px,3vw,34px); left:clamp(20px,4vw,58px); right:clamp(20px,4vw,58px); z-index:3; display:flex; justify-content:flex-end; }
+.about-close { width:40px; height:40px; display:grid; place-items:center; border:1px solid rgba(255,255,255,.24); background:rgba(7,11,18,.38); color:#eef6ff; cursor:pointer; font-family:'JetBrains Mono',monospace; font-size:18px; }
+.about-close:hover { border-color:rgba(255,255,255,.44); background:rgba(7,11,18,.58); }
+.about-card {
+  position:absolute; left:50%; top:50%; z-index:2;
+  width:min(640px, calc(100% - 56px));
+  padding:clamp(24px,3.2vw,38px);
+  transform:translate(-50%, -50%);
+  border:1px solid rgba(255,255,255,.24);
+  border-radius:8px;
+  background:linear-gradient(135deg, rgba(10,18,28,.68), rgba(10,18,28,.42));
+  backdrop-filter:blur(18px) saturate(1.18);
+  -webkit-backdrop-filter:blur(18px) saturate(1.18);
+  box-shadow:0 18px 60px rgba(0,0,0,.48);
+  font-family:'Segoe UI',Arial,sans-serif;
+}
+.about-kicker { margin-bottom:10px; color:#65c7ff; font-size:11px; letter-spacing:.22em; text-transform:uppercase; }
+.about-title { margin:0; max-width:100%; color:#eef6ff; font-family:'Syne','Segoe UI',Arial,sans-serif; font-size:clamp(42px,4.6vw,68px); font-weight:800; line-height:.96; letter-spacing:0; white-space:nowrap; }
+.about-version { margin-top:12px; color:rgba(238,246,255,.68); font-size:16px; }
+.about-desc { margin:22px 0 0; color:rgba(238,246,255,.84); font-size:16px; line-height:1.55; }
+.about-status { margin-top:24px; padding:12px 14px; border:1px solid rgba(125,240,181,.28); background:rgba(125,240,181,.09); color:rgba(229,255,241,.94); font-size:13px; }
+.about-actions { margin-top:20px; display:flex; flex-wrap:wrap; gap:10px; }
+.about-btn { min-height:38px; padding:0 14px; display:inline-flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.1); color:#eef6ff; text-decoration:none; font-family:'JetBrains Mono',monospace; font-size:13px; cursor:pointer; }
+.about-btn.primary { border-color:rgba(101,199,255,.52); background:rgba(101,199,255,.16); color:#dff5ff; }
+.about-btn:hover { border-color:rgba(255,255,255,.46); background:rgba(255,255,255,.16); }
+.about-btn:disabled { opacity:.62; cursor:default; }
+.about-btn:disabled:hover { border-color:rgba(255,255,255,.22); background:rgba(255,255,255,.1); }
+.about-build { margin-top:18px; color:rgba(238,246,255,.48); font-size:11px; letter-spacing:.12em; text-transform:uppercase; }
+
+@media (max-width: 640px) {
+  .about-card { left:14px; right:14px; top:auto; bottom:14px; width:auto; padding:20px; transform:none; }
+  .about-title { font-size:clamp(34px,9vw,40px); }
+  .about-actions .about-btn { flex:1 1 100%; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -311,6 +370,7 @@ textarea { resize:none; height:54px; font-size:11px; }
   <div id="protPill" class="prot-pill" title="Защита: ротация User-Agent">
     <span class="dot"></span><span id="protPillTxt">Booting</span>
   </div>
+  <button type="button" class="hdr-about" onclick="openAbout()" title="О программе" aria-label="О программе">i</button>
   <a class="hdr-gh" id="ghLink" href="https://github.com/SkyNeko1/YaPanoRipper" rel="noopener noreferrer" title="GitHub" aria-label="GitHub">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.73.5.66 5.57.66 11.84c0 5.02 3.25 9.27 7.77 10.77.57.1.78-.25.78-.55 0-.27-.01-1.16-.02-2.1-3.16.69-3.83-1.34-3.83-1.34-.52-1.31-1.27-1.66-1.27-1.66-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.24 3.33.95.1-.74.4-1.24.73-1.52-2.52-.29-5.17-1.26-5.17-5.62 0-1.24.44-2.25 1.17-3.04-.12-.29-.51-1.45.11-3.03 0 0 .96-.31 3.15 1.16.91-.25 1.89-.38 2.86-.38.97 0 1.95.13 2.86.38 2.19-1.47 3.15-1.16 3.15-1.16.62 1.58.23 2.74.11 3.03.73.79 1.17 1.8 1.17 3.04 0 4.37-2.66 5.33-5.19 5.61.41.35.77 1.05.77 2.12 0 1.53-.01 2.77-.01 3.15 0 .3.21.66.79.55 4.51-1.5 7.76-5.75 7.76-10.77C23.34 5.57 18.27.5 12 .5Z"/></svg>
   </a>
@@ -380,6 +440,30 @@ textarea { resize:none; height:54px; font-size:11px; }
 
 </div>
 
+<section class="about-screen" id="about-screen" aria-label="О программе" aria-hidden="true">
+  <div class="about-base"></div>
+  <video class="about-video" id="about-video" autoplay muted loop playsinline preload="auto">
+    <source src="assets/about-bg.mp4" type="video/mp4">
+  </video>
+  <img class="about-fallback" id="about-fallback" src="assets/about-bg.jpg" alt="">
+  <div class="about-shade"></div>
+  <div class="about-top">
+    <button class="about-close" type="button" onclick="closeAbout()" aria-label="Закрыть">×</button>
+  </div>
+  <div class="about-card">
+    <div class="about-kicker">Desktop utility</div>
+    <h1 class="about-title">YaPanoRipper</h1>
+    <div class="about-version">Версия 2.0</div>
+    <p class="about-desc">Скачивание панорам Яндекс Карт в оригинальном разрешении.</p>
+    <div class="about-status" id="about-status">Установлена актуальная версия</div>
+    <div class="about-actions">
+      <button class="about-btn primary" id="about-update-btn" type="button" onclick="checkForAppUpdate()">Проверить обновления</button>
+      <button class="about-btn" type="button" onclick="openGithubFromAbout()">GitHub</button>
+    </div>
+    <div class="about-build">Windows desktop · Setup / Portable</div>
+  </div>
+</section>
+
 <!-- Floating centered toast (system events) -->
 <div id="toastHost" class="toast-host">
   <div class="toast">
@@ -433,6 +517,7 @@ const QUALITY = [
 const BATCH = 12;
 const MAX_TILE_ATTEMPTS = 3;
 const HAS_OFFSCREEN = (typeof OffscreenCanvas !== 'undefined');
+const EXPORT_FORMAT_STORAGE_KEY = 'yapanoripper.exportFormat';
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -524,6 +609,20 @@ function getSelectedFormat() {
   return el && el.value === 'png' ? 'png' : 'jpeg';
 }
 
+function loadSavedExportFormat() {
+  try {
+    return localStorage.getItem(EXPORT_FORMAT_STORAGE_KEY) === 'png' ? 'png' : 'jpeg';
+  } catch(e) {
+    return 'jpeg';
+  }
+}
+
+function saveExportFormat(format) {
+  try {
+    localStorage.setItem(EXPORT_FORMAT_STORAGE_KEY, format === 'png' ? 'png' : 'jpeg');
+  } catch(e) {}
+}
+
 function formatExt(format) {
   return format === 'png' ? 'png' : 'jpg';
 }
@@ -542,13 +641,15 @@ function normalizeFilename(name, format) {
 }
 
 function onFormatChange() {
+  const format = getSelectedFormat();
+  saveExportFormat(format);
   const filename = document.getElementById('filename');
-  if (filename) filename.value = normalizeFilename(filename.value, getSelectedFormat());
+  if (filename) filename.value = normalizeFilename(filename.value, format);
 }
 
-function resetExportFormat() {
+function restoreExportFormat() {
   const format = document.getElementById('format-select');
-  if (format) format.value = 'jpeg';
+  if (format) format.value = loadSavedExportFormat();
   onFormatChange();
 }
 
@@ -914,7 +1015,7 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 
 function openZoomModal(data) {
   selectedZoom = null;
-  resetExportFormat();
+  restoreExportFormat();
   document.getElementById('btn-dl').disabled = true;
   document.getElementById('btn-dl-txt').textContent = '↓ ВЫБЕРИ КАЧЕСТВО';
   document.getElementById('m-zoom-err').style.display = 'none';
@@ -1117,6 +1218,99 @@ function tauriInvoke(command, args) {
   return inv(command, args);
 }
 
+function openAbout() {
+  const screen = $('about-screen');
+  const video = $('about-video');
+  if (!screen) return;
+  screen.classList.add('open');
+  screen.setAttribute('aria-hidden', 'false');
+  if (video) video.play().catch(() => {});
+}
+
+function closeAbout() {
+  const screen = $('about-screen');
+  if (!screen) return;
+  screen.classList.remove('open');
+  screen.setAttribute('aria-hidden', 'true');
+}
+
+function updateModeText(mode) {
+  return mode === 'portable' ? 'Portable' : 'Setup';
+}
+
+function resetUpdateButton() {
+  const btn = $('about-update-btn');
+  if (!btn) return;
+  btn.disabled = false;
+  btn.textContent = 'Проверить обновления';
+  btn.onclick = checkForAppUpdate;
+}
+
+async function checkForAppUpdate() {
+  const status = $('about-status');
+  const btn = $('about-update-btn');
+  if (status) status.textContent = 'Проверяю обновления...';
+  if (btn) btn.disabled = true;
+  try {
+    const info = await tauriInvoke('check_app_update');
+    if (info.has_update) {
+      if (status) status.textContent = `Доступна ${info.latest_version} · ${updateModeText(info.mode)}`;
+      if (btn) {
+        btn.textContent = 'Установить обновление';
+        btn.onclick = installAppUpdate;
+        btn.disabled = false;
+      }
+      flashToast('Обновление найдено', `${info.latest_version} · ${info.asset_name}`, 'info', 4200);
+    } else {
+      if (status) status.textContent = 'Установлена актуальная версия';
+      resetUpdateButton();
+      flashToast('Обновления', 'Установлена актуальная версия', 'info', 3200);
+    }
+  } catch(e) {
+    if (status) status.textContent = 'Не удалось проверить обновления';
+    resetUpdateButton();
+    flashToast('Обновления', e.message || String(e), 'warn', 5200);
+  }
+}
+
+async function installAppUpdate() {
+  const status = $('about-status');
+  const btn = $('about-update-btn');
+  if (status) status.textContent = 'Скачиваю обновление...';
+  if (btn) btn.disabled = true;
+  try {
+    const result = await tauriInvoke('install_app_update');
+    if (status) {
+      status.textContent = result.mode === 'portable'
+        ? 'Заменяю portable и перезапускаю...'
+        : 'Запускаю установщик...';
+    }
+    flashToast('Обновление', `${result.version} · ${result.asset_name}`, 'info', 5200);
+  } catch(e) {
+    if (status) status.textContent = 'Не удалось установить обновление';
+    resetUpdateButton();
+    flashToast('Обновление', e.message || String(e), 'err', 6500);
+  }
+}
+
+function openGithubFromAbout() {
+  tauriInvoke('open_github').catch(() => window.open('https://github.com/SkyNeko1/YaPanoRipper', '_blank'));
+}
+
+const aboutVideo = $('about-video');
+const aboutFallback = $('about-fallback');
+if (aboutVideo) {
+  aboutVideo.addEventListener('canplay', () => aboutVideo.classList.add('ready'));
+  aboutVideo.addEventListener('error', () => {
+    aboutVideo.style.display = 'none';
+    if (aboutFallback) aboutFallback.style.display = 'block';
+  });
+}
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeAbout();
+});
+
 async function pollStatus() {
   try {
     const s = await tauriInvoke('get_status');
@@ -1153,8 +1347,8 @@ if (document.readyState === 'loading') {
   wireGithubLink();
 }
 </script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/proj4@2.9.2/dist/proj4.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/proj4leaflet@1.0.2/src/proj4leaflet.js" onload="initMap()"></script>
+<script src="vendor/leaflet.js"></script>
+<script src="vendor/proj4.js"></script>
+<script src="vendor/proj4leaflet.js" onload="initMap()"></script>
 </body>
 </html>
