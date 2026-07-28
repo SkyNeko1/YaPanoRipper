@@ -332,7 +332,7 @@ textarea { resize:none; height:54px; font-size:11px; }
   font-family:'Segoe UI',Arial,sans-serif;
 }
 .about-kicker { margin-bottom:10px; color:#65c7ff; font-size:11px; letter-spacing:.22em; text-transform:uppercase; }
-.about-title { margin:0; max-width:100%; color:#eef6ff; font-family:'Syne','Segoe UI',Arial,sans-serif; font-size:clamp(42px,4.6vw,68px); font-weight:800; line-height:.96; letter-spacing:0; white-space:nowrap; }
+.about-title { width:100%; margin:0; color:#eef6ff; font-family:'Syne','Segoe UI',Arial,sans-serif; font-size:46px; font-weight:800; line-height:1; letter-spacing:0; text-align:center; white-space:nowrap; }
 .about-version { margin-top:12px; color:rgba(238,246,255,.68); font-size:16px; }
 .about-desc { margin:22px 0 0; color:rgba(238,246,255,.84); font-size:16px; line-height:1.55; }
 .about-status { margin-top:24px; padding:12px 14px; border:1px solid rgba(125,240,181,.28); background:rgba(125,240,181,.09); color:rgba(229,255,241,.94); font-size:13px; }
@@ -346,8 +346,12 @@ textarea { resize:none; height:54px; font-size:11px; }
 
 @media (max-width: 640px) {
   .about-card { left:14px; right:14px; top:auto; bottom:14px; width:auto; padding:20px; transform:none; }
-  .about-title { font-size:clamp(34px,9vw,40px); }
+  .about-title { font-size:30px; }
   .about-actions .about-btn { flex:1 1 100%; }
+}
+
+@media (max-width: 380px) {
+  .about-title { font-size:22px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
