@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "YaPanoRipper",
-  "version": "1.3.0",
+  "version": "2.0.0",
   "identifier": "com.skyneko1.yapanoripper",
   "build": {
     "frontendDist": "../dist"
@@ -23,7 +23,7 @@
     ],
     "withGlobalTauri": true,
     "security": {
-      "csp": null
+      "csp": "default-src 'self' ipc: http://ipc.localhost; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' asset: http://asset.localhost data: blob: https://pano.maps.yandex.net https://core-sat.maps.yandex.net https://core-renderer-tiles.maps.yandex.net https://*.yandex.net; media-src 'self' asset: http://asset.localhost blob:; connect-src 'self' ipc: http://ipc.localhost https://api-maps.yandex.ru https://*.yandex.net; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
     }
   },
   "bundle": {
