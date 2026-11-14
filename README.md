@@ -4,7 +4,7 @@
 
 **Скачивай панорамы Яндекс.Карт в максимальном качестве**
 
-[![Web App](https://img.shields.io/badge/Web_App-SkyNeko1.github.io%2FYaPanoRipper-0c1422?style=flat-square&logo=googlechrome&logoColor=00b4ff)](https://SkyNeko1.github.io/YaPanoRipper)
+[![Web App](https://img.shields.io/badge/Web_App-yapanoripper.github.io-0c1422?style=flat-square&logo=googlechrome&logoColor=00b4ff)](https://yapanoripper.github.io)
 [![License](https://img.shields.io/badge/License-Elastic--2.0-0c1422?style=flat-square&logoColor=00b4ff)](LICENSE)
 [![Built with Claude](https://img.shields.io/badge/Built_with-Claude_AI-0c1422?style=flat-square&logo=anthropic&logoColor=00b4ff)](https://claude.ai)
 
@@ -28,7 +28,7 @@
 
 Просто открой в браузере:
 
-### → **[SkyNeko1.github.io/YaPanoRipper](https://SkyNeko1.github.io/YaPanoRipper)** ←
+### → **[yapanoripper.github.io](https://yapanoripper.github.io)** ←
 
 Ничего ставить не надо. Всё работает прямо во вкладке.
 
