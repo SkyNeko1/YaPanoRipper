@@ -40,7 +40,7 @@ Native Tauri (Rust) application with automatic User-Agent rotation to bypass ant
 
 **Download the latest version:**
 
-- 📦 **[YaPanoRipper Releases](https://github.com/SkyNeko1/YaPanoRipper/releases)** — Windows installer and portable build
+- 📦 **[YaPanoRipper Releases](https://github.com/yapanoripper/YaPanoRipper/releases)** — Windows installer and portable build
 
 > ⚠️ **Auto-update is not implemented yet.** To get a newer version, download it again from Releases.
 
@@ -91,7 +91,7 @@ For those who prefer to run everything locally.
 
 ### Installation
 
-1. Download **[index.html](https://raw.githubusercontent.com/SkyNeko1/YaPanoRipper/main/index.html)** (right-click → "Save as…")
+1. Download **[index.html](https://raw.githubusercontent.com/yapanoripper/YaPanoRipper/main/index.html)** (right-click → "Save as…")
 2. Open the saved file in your browser by double-clicking it
 
 That's it. One file — one page.

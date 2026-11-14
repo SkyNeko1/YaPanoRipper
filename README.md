@@ -40,7 +40,7 @@
 
 **Скачать актуальную версию:**
 
-- 📦 **[Релизы YaPanoRipper](https://github.com/SkyNeko1/YaPanoRipper/releases)** — установщик и портативная версия для Windows
+- 📦 **[Релизы YaPanoRipper](https://github.com/yapanoripper/YaPanoRipper/releases)** — установщик и портативная версия для Windows
 
 Исходники десктоп-версии лежат в `windows/`.
 
@@ -88,7 +88,7 @@
 
 ### Установка
 
-1. Скачай **[index.html](https://raw.githubusercontent.com/SkyNeko1/YaPanoRipper/main/index.html)** (правый клик → «Сохранить как…»)
+1. Скачай **[index.html](https://raw.githubusercontent.com/yapanoripper/YaPanoRipper/main/index.html)** (правый клик → «Сохранить как…»)
 2. Открой сохранённый файл в браузере двойным кликом
 
 Всё. Один файл — одна страница.
